@@ -27,7 +27,7 @@ public abstract class MixinKeyBinding {
 
     @Inject(method = "onKeyPressed", at = @At("HEAD"), cancellable = true)
     private static void onKeyPressed(InputUtil.Key key, CallbackInfo ci) {
-        if (KeybindsManager.isConflicting(key)) {
+        if (KeybindsManager.hasConflicts(key)) {
             ci.cancel();
             KeybindsManager.openConflictMenu(key);
         }
@@ -35,7 +35,7 @@ public abstract class MixinKeyBinding {
 
     @Inject(method = "setPressed", at = @At("HEAD"), cancellable = true)
     private void setPressed(boolean pressed, CallbackInfo ci) {
-        if (KeybindsManager.isConflicting(this.boundKey)) {
+        if (KeybindsManager.hasConflicts(this.boundKey)) {
             ci.cancel();
         }
     }

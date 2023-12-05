@@ -23,131 +23,184 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.MathHelper;
 
-public class KeybindsScreen extends Screen {
-
+public class KeybindsScreen extends Screen
+{
     int timeIn = 0;
-    int slotSelected = -1;
+    int selectedSlot = -1;
 
     private InputUtil.Key conflictedKey = InputUtil.UNKNOWN_KEY;
 
     final MinecraftClient mc;
 
-    public KeybindsScreen() {
-        super(NarratorManager.EMPTY);
-        mc = MinecraftClient.getInstance();
+    private final float expansionFactorWhenSelected = 1.075f;
+    private final float deadZoneDistance = 20f;
+
+    public KeybindsScreen()
+    {
+        super( NarratorManager.EMPTY );
+        this.mc = MinecraftClient.getInstance();
     }
 
     @Override
     //Updated to use DrawContext instead of MatrixStack
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        super.render(context,mouseX,mouseY,delta);
+    public void render( DrawContext context, int mouseX, int mouseY, float delta )
+    {
+        super.render( context, mouseX, mouseY, delta );
 
-        int x = width / 2;
-        int y = height / 2;
+        // Pixel coords of screen centre
+        int centreX = width / 2;
+        int centreY = height / 2;
         int maxRadius = 80;
 
-        double angle = mouseAngle(x, y, mouseX, mouseY);
+        // Angle of mouse, in [angle unit] from [axis]
+        // TODO
+        double mouseAngle = mouseAngle( centreX, centreY, mouseX, mouseY );
 
-        //Determines how many segments to make for the circle selector thingy
-        int segments = KeybindsManager.getConflicting(conflictedKey).size();
-        float step = (float) Math.PI / 180;
-        float degPer = (float) Math.PI * 2 / segments;
+        // The other thing bothering me
+        // Adds a "dead zone" so you can cancel quickly
+        float mouseDistanceFromCentre = MathHelper.sqrt(
+                (mouseX - centreX) * (mouseX - centreX) +
+                        (mouseY - centreY) * (mouseY - centreY)
+        );
 
-        slotSelected = -1;
+        // Determines how many segments to make for the pie menu
+        int numberOfSectors = KeybindsManager.getConflicts( this.conflictedKey ).size();
 
-        Tessellator tess = Tessellator.getInstance();// IDK
+        // Use Minecraft's value of PI to remove casts
+        float step = MathHelper.PI / 180;
+        float sectorAngle = (MathHelper.PI * 2) / numberOfSectors; // It's actually radians
+
+        this.selectedSlot = -1;
+
+        // Rendering stuff
+        Tessellator tess = Tessellator.getInstance();
         BufferBuilder buf = tess.getBuffer();
 
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram); //Updated to 1.20
-        buf.begin(VertexFormat.DrawMode.TRIANGLE_FAN, VertexFormats.POSITION_COLOR);
+        RenderSystem.setShader( GameRenderer::getPositionColorProgram );
+        buf.begin( VertexFormat.DrawMode.TRIANGLE_FAN, VertexFormats.POSITION_COLOR );
 
-        //if cursor is in sector then it Highlights
-        for (int seg = 0; seg < segments; seg++) {
-            boolean mouseInSector = degPer * seg < angle && angle < degPer * (seg + 1);
-            float radius = Math.max(0F, Math.min((timeIn + delta - seg * 6F / segments) * 40F, maxRadius));
-            if (mouseInSector) {
-                radius *= 1.025f;
-            }
 
-            int gs = 0x40;
-            if (seg % 2 == 0) {
-                gs += 0x19;
-            }
-            int r = gs;
-            int g = gs;
-            int b = gs;
+        // if cursor is in sector then it highlights
+        for ( int sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
+        {
+            // Check if the mouse angle is within the current sector
+            boolean mouseInSector = (sectorAngle * sectorIndex) < mouseAngle
+                    && mouseAngle < sectorAngle * (sectorIndex + 1)
+                    && mouseDistanceFromCentre > this.deadZoneDistance;
+
+            // "Huh?" -me
+            float radius = Math.max( 0F, Math.min( (timeIn + delta - sectorIndex * 6F / numberOfSectors) * 40F, maxRadius ) );
+            if ( mouseInSector )
+                radius *= this.expansionFactorWhenSelected; // TODO: configs???
+
+            // Draw the pie menu :D
+
+            int grayscaleColor = 0x40;
+
+            // Darken every other sector
+            if ( sectorIndex % 2 == 0 ) grayscaleColor += 0x19;
+
+            int r = grayscaleColor;
+            int g = grayscaleColor;
+            int b = grayscaleColor;
+
             int a = 0x66;
 
-            if (seg == 0) {
-                buf.vertex(x, y, 0).color(r, g, b, a).next();
+            // Set centre vertex of circle
+            if ( sectorIndex == 0 )
+                buf.vertex( centreX, centreY, 0 ).color( r, g, b, a ).next();
+
+            // Now make the rest of the sector white
+            if ( mouseInSector )
+            {
+                this.selectedSlot = sectorIndex;
+                r = g = b = 0xFF; // Woah, I didn't know you could do this
             }
 
-            if (mouseInSector) {
-                slotSelected = seg;
-                r = g = b = 0xFF;
-            }
+            // Draw an arc!!!
+            // TODO: maybe add another arc so the deadzone is visible?
+            for ( float i = 0; i < sectorAngle + step / 2; i += step )
+            {
+                float rad = i + sectorIndex * sectorAngle;
+                float xp = centreX + MathHelper.cos( rad ) * radius;
+                float yp = centreY + MathHelper.sin( rad ) * radius;
 
-            for (float i = 0; i < degPer + step / 2; i += step) {
-                float rad = i + seg * degPer;
-                float xp = x + MathHelper.cos(rad) * radius;
-                float yp = y + MathHelper.sin(rad) * radius;
+                if ( i == 0 ) buf.vertex( xp, yp, 0 ).color( r, g, b, a ).next();
 
-                if (i == 0) {
-                    buf.vertex(xp, yp, 0).color(r, g, b, a).next();
-                }
-                buf.vertex(xp, yp, 0).color(r, g, b, a).next();
+                buf.vertex( xp, yp, 0 ).color( r, g, b, a ).next();
             }
         }
-        tess.draw();
-        // IDK, This does something but im not sure
-        for (int seg = 0; seg < segments; seg++) {
-            boolean mouseInSector = degPer * seg < angle && angle < degPer * (seg + 1);
-            float radius = Math.max(0F, Math.min((timeIn + delta - seg * 6F / segments) * 40F, maxRadius));
-            if (mouseInSector) {
-                radius *= 1.025f;
-            }
 
-            float rad = (seg + 0.5f) * degPer;
-            float xp = x + MathHelper.cos(rad) * radius;
-            float yp = y + MathHelper.sin(rad) * radius;
-            String boundKey = Text.translatable(KeybindsManager.getConflicting(conflictedKey).get(seg).getTranslationKey()).getString();
+        tess.draw();
+
+        // This has to be here because text rendering tramples over our bufferbuilder
+        // The alternative is to grab the tessellator and bufferbuilders and make a drawcall
+        // for every sector, which is probably worse than doing a bit more iteration
+        for ( int sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
+        {
+            boolean mouseInSector = (sectorAngle * sectorIndex) < mouseAngle
+                    && mouseAngle < sectorAngle * (sectorIndex + 1)
+                    && mouseDistanceFromCentre > 20f;
+
+            float radius = Math.max( 0F, Math.min( (timeIn + delta - sectorIndex * 6F / numberOfSectors) * 40F, maxRadius ) );
+            if ( mouseInSector ) radius *= this.expansionFactorWhenSelected;
+
+            // Key action names
+            // Moved it here to reduce looping
+            // Nope I'm not reading all this now
+            float rad = (sectorIndex + 0.5f) * sectorAngle;
+            float xp = centreX + MathHelper.cos( rad ) * radius;
+            float yp = centreY + MathHelper.sin( rad ) * radius;
+
+            KeyBinding conflict = KeybindsManager.getConflicts( conflictedKey )
+                    .get( sectorIndex );
+
+            // The biggest nagging bug for me
+            // Tells you which control category the action goes in
+            String actionName = Text.translatable( conflict.getCategory() ).getString() + ": " +
+                    Text.translatable( conflict.getTranslationKey() ).getString();
+
             float xsp = xp - 4;
             float ysp = yp;
-            String name = (mouseInSector ? Formatting.UNDERLINE : Formatting.RESET) + boundKey;
-            int width = textRenderer.getWidth(name);
-            if (xsp < x) {
+            String name = ( mouseInSector ? Formatting.UNDERLINE : Formatting.RESET ) + actionName;
+            int width = textRenderer.getWidth( name );
+            if ( xsp < centreX )
                 xsp -= width - 8;
-            }
-            if (ysp < y) {
+            if ( ysp < centreY )
                 ysp -= 9;
-            }
 
-            // Updated To 1.20, uses DrawContext instead of textRenderer
-            context.drawTextWithShadow(textRenderer,name, (int) xsp, (int) ysp, 0xFFFFFF);
-
+            context.drawTextWithShadow( textRenderer, name, (int) xsp, (int) ysp, 0xFFFFFF );
         }
     }
 
 
-    public void setConflictedKey(InputUtil.Key key) {
+    public void setConflictedKey( InputUtil.Key key )
+    {
         this.conflictedKey = key;
     }
 
-    // Returns the angle of the mouse position relative to inputted x and y
-    private static double mouseAngle(int x, int y, int mx, int my) {
+    // Returns the angle of the line bounded by the given coordinates and the mouse position,
+    // from the vertical axis
+    // (I think)
+    // This is why we study trigo, guys!
+    // Who said sin/cos/tan is useless?
+    // (I'll admit, outside of computer graphics, it kinda is)
+    private static double mouseAngle( int x, int y, int mx, int my )
+    {
         return (MathHelper.atan2(my - y, mx - x) + Math.PI * 2) % (Math.PI * 2);
     }
 
     @Override
-    //Checks for Conflicted keys every gametick and waits for input to press selected key once.
+    // Checks for Conflicted keys every gametick
+    // and waits for input to press selected key once
     public void tick() {
         super.tick();
         if (!InputUtil.isKeyPressed(MinecraftClient.getInstance().getWindow().getHandle(), conflictedKey.getCode())) {
             mc.setScreen(null);
-            if (slotSelected != -1) {
-                KeyBinding bind = KeybindsManager.getConflicting(conflictedKey).get(slotSelected);
+            if ( selectedSlot != -1) {
+                KeyBinding bind = KeybindsManager.getConflicts(conflictedKey).get( selectedSlot );
                 ((AccessorKeyBinding) bind).setPressed(true);
                 ((AccessorKeyBinding) bind).setTimesPressed(1);
             }
@@ -156,7 +209,8 @@ public class KeybindsScreen extends Screen {
     }
 
     @Override
-    // IDK
+    // Don't pause the game when this screen is open
+    // actually why not
     public boolean shouldPause() {
         return false;
     }
