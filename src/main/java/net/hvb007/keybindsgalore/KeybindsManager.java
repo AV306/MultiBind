@@ -15,7 +15,8 @@ import java.util.Map;
 //import org.apache.logging.log4j.Logger;
 
 
-public class KeybindsManager {
+public class KeybindsManager
+{
 //    private static final Logger LOGGER = LogManager.getLogger();
 
     // To HBV007og:
@@ -25,32 +26,8 @@ public class KeybindsManager {
     // I hope you have fun on your modding/programming travels! :D
     // - Blender (AV306)
 
-    // Creates an Hashmap that maps conflicting keys to the list of actions they perform
-    // allowing us to get an easy list of what each key should do
-    private static final Map<InputUtil.Key, List<KeyBinding>> conflictingKeys = Maps.newHashMap();
-
-    // This creates the ArrayList of conflicting actions for us to fill in the above HM
-    // I can't claim to understand how this works either (yet)
-    public static boolean handleConflict( InputUtil.Key key )
-    {
-        List<KeyBinding> matches = new ArrayList<>();
-
-        KeyBinding[] allKeys = MinecraftClient.getInstance().options.allKeys;
-
-        // Look for a KeyBinding bound to the key that was just pressed
-        // and add it to the running list
-        for ( KeyBinding bind : allKeys )
-            if ( bind.matchesKey( key.getCode(), -1 ) )
-                matches.add( bind );
-
-        // More than one matching KeyBinding, found conflicts!
-        if ( matches.size() > 1 )
-        {
-            KeybindsManager.conflictingKeys.put(key, matches);
-            //LOGGER.info("Conflicting key: " + key);
-
-            // Define the array of keys that cannot be multi-bound
-            InputUtil.Key[] illegalKeys = {
+    // Array of keys that cannot be multi-bound
+    private static final InputUtil.Key[] illegalKeys = {
                     InputUtil.fromTranslationKey( "key.keyboard.tab" ),
                     InputUtil.fromTranslationKey( "key.keyboard.caps.lock" ),
                     InputUtil.fromTranslationKey( "key.keyboard.left.shift" ),
@@ -63,46 +40,76 @@ public class KeybindsManager {
                     InputUtil.fromTranslationKey( "key.keyboard.d" )
             };
 
+    // Creates an Hashmap that maps conflicting keys to the list of actions they perform
+    // allowing us to get an easy list of what each key should do
+    private static final Map<InputUtil.Key, List<KeyBinding>> conflictingKeys = Maps.newHashMap();
+
+    // This creates the ArrayList of conflicting actions for us to fill in the above HM
+    // I can't claim to understand how this works either (yet)
+
+    /**
+     * Check if a given key has any binding conflicts, and add it to the list if it does 
+     *
+     * @param key: The key to check
+     * @return If any conflicts were found
+     */
+    public static boolean handleConflict( InputUtil.Key key )
+    {
+        List<KeyBinding> matches = new ArrayList<>();
+
+        KeyBinding[] allKeys = MinecraftClient.getInstance().options.allKeys;
+
+        // Look for a KeyBinding bound to the key that was just pressed
+        // and add it to the running list
+        for ( KeyBinding binding : allKeys )
+            if ( binding.matchesKey( key.getCode(), -1 ) ) matches.add( binding );
+
+        // More than one matching KeyBinding, found conflicts!
+        if ( matches.size() > 1 )
+        {
+            // Tentatively register the key in our map of conflicting keys
+            conflictingKeys.put( key, matches );
+            //LOGGER.info("Conflicting key: " + key);
+            
+
             // Check if the key is in the array
-            boolean illegalKeyIsMultiBound = false;
-            for ( InputUtil.Key arrayKey : illegalKeys )
+            for ( InputUtil.Key illegalKey : illegalKeys )
             {
                 // Remove the illegal key from the multibinding list
-                if ( arrayKey.equals( key)  )
+                if ( key.equals( illegalKey ) )
                 {
-                    illegalKeyIsMultiBound = true;
                     KeybindsManager.conflictingKeys.remove( key );
-                    break;
+                    return false;
                 }
             }
 
-            return !illegalKeyIsMultiBound;
-
-        } else
-        {
-            // No conflicts, not worth handling
-            KeybindsManager.conflictingKeys.remove( key );
-            return false;
+            // Not in the array, this is a job for us!
+            return true;
         }
+        else conflictingKeys.remove( key ); // No conflicts, not worth handling
+
+        return false;
     }
 
     // Checks if there is a binding conflict on this key
-    public static boolean hasConflicts( InputUtil.Key key ) {
-        return conflictingKeys.containsKey(key);
+    public static boolean hasConflicts( InputUtil.Key key )
+    {
+        return conflictingKeys.containsKey( key );
     }
 
-    // Initializes and opens the Circle selector thingy
+    // Initializes and open the pie menu
     public static void openConflictMenu( InputUtil.Key key )
     {
         KeybindsScreen screen = new KeybindsScreen();
-        screen.setConflictedKey (key );
+        screen.setConflictedKey( key );
+        
         MinecraftClient.getInstance().setScreen( screen );
     }
 
 
     // Shortcut method to get conflicts on a key
-    public static List<KeyBinding> getConflicts( InputUtil.Key key ) {
-        return conflictingKeys.get(key);
+    public static List<KeyBinding> getConflicts( InputUtil.Key key )
+    {
+        return conflictingKeys.get( key );
     }
-
 }
