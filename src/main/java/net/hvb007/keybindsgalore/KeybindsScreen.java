@@ -23,11 +23,13 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.MathHelper;
 
+// FIXME: Refactor classname to KeybindSelectorScreen
 public class KeybindsScreen extends Screen
 {
-    int timeIn = 0;
+    int timeIn = 0; // TODO: rename to timeInScreen
     int selectedSlot = -1;
 
+    // TODO: Rename to targetKey
     private InputUtil.Key conflictedKey = InputUtil.UNKNOWN_KEY;
 
     final MinecraftClient mc;
@@ -41,8 +43,15 @@ public class KeybindsScreen extends Screen
         this.mc = MinecraftClient.getInstance();
     }
 
+    public KeybindsScreen( InputUtil.Key key )
+    {
+        this();
+
+        this.setConflictedKey( key );
+    }
+
     @Override
-    //Updated to use DrawContext instead of MatrixStack
+    // TODO: Split?
     public void render( DrawContext context, int mouseX, int mouseY, float delta )
     {
         super.render( context, mouseX, mouseY, delta );
@@ -81,20 +90,46 @@ public class KeybindsScreen extends Screen
         RenderSystem.setShader( GameRenderer::getPositionColorProgram );
         buf.begin( VertexFormat.DrawMode.TRIANGLE_FAN, VertexFormats.POSITION_COLOR );
 
+        // TODO: Can we do this with a lerp?
+        float radius = Math.max( 0F, Math.min( (timeIn + delta - sectorIndex * 6F / numberOfSectors) * 40F, maxRadius ) );
 
         // if cursor is in sector then it highlights
         for ( int sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
         {
             // Check if the mouse angle is within the current sector
-            boolean mouseInSector = (sectorAngle * sectorIndex) < mouseAngle
-                    && mouseAngle < sectorAngle * (sectorIndex + 1)
-                    && mouseDistanceFromCentre > this.deadZoneDistance;
+            boolean mouseInSector = (sectorAngle * sectorIndex) < mouseAngle // Beyond the start of this sector
+                    && mouseAngle < sectorAngle * (sectorIndex + 1) // Within this sector
+                    && mouseDistanceFromCentre > this.deadZoneDistance; // Outside deadzone
 
-            // "Huh?" -me
-            float radius = Math.max( 0F, Math.min( (timeIn + delta - sectorIndex * 6F / numberOfSectors) * 40F, maxRadius ) );
             if ( mouseInSector )
                 radius *= this.expansionFactorWhenSelected; // TODO: configs???
 
+            // Draw label text
+            // FIXME
+            float textAngle = (sectorIndex + 0.5f) * sectorAngle;
+            float xp = centreX + MathHelper.cos( textAngle ) * radius;
+            float yp = centreY + MathHelper.sin( textAngle ) * radius;
+
+            KeyBinding conflict = KeybindsManager.getConflicts( conflictedKey )
+                    .get( sectorIndex );
+
+            // The biggest nagging bug for me
+            // Tells you which control category the action goes in
+            String actionName = Text.translatable( conflict.getCategory() ).getString() + ": " +
+                    Text.translatable( conflict.getTranslationKey() ).getString();
+
+            float xsp = xp - 4;
+            float ysp = yp;
+            String name = ( mouseInSector ? Formatting.UNDERLINE : Formatting.RESET ) + actionName;
+            int width = textRenderer.getWidth( name );
+            if ( xsp < centreX ) xsp -= width - 8;
+            if ( ysp < centreY ) ysp -= 9;
+
+            context.drawTextWithShadow( textRenderer, name, (int) xsp, (int) ysp, 0xFFFFFF );
+
+
+
+            
             // Draw the pie menu :D
 
             int grayscaleColor = 0x40;
@@ -124,10 +159,10 @@ public class KeybindsScreen extends Screen
             for ( float i = 0; i < sectorAngle + step / 2; i += step )
             {
                 float rad = i + sectorIndex * sectorAngle;
-                float xp = centreX + MathHelper.cos( rad ) * radius;
-                float yp = centreY + MathHelper.sin( rad ) * radius;
+                float xp1 = centreX + MathHelper.cos( rad ) * radius;
+                float yp1 = centreY + MathHelper.sin( rad ) * radius;
 
-                if ( i == 0 ) buf.vertex( xp, yp, 0 ).color( r, g, b, a ).next();
+                if ( i == 0 ) buf.vertex( xp1, yp1, 0 ).color( r, g, b, a ).next();
 
                 buf.vertex( xp, yp, 0 ).color( r, g, b, a ).next();
             }
@@ -138,7 +173,7 @@ public class KeybindsScreen extends Screen
         // This has to be here because text rendering tramples over our bufferbuilder
         // The alternative is to grab the tessellator and bufferbuilders and make a drawcall
         // for every sector, which is probably worse than doing a bit more iteration
-        for ( int sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
+        /*for ( int sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
         {
             boolean mouseInSector = (sectorAngle * sectorIndex) < mouseAngle
                     && mouseAngle < sectorAngle * (sectorIndex + 1)
@@ -172,7 +207,7 @@ public class KeybindsScreen extends Screen
                 ysp -= 9;
 
             context.drawTextWithShadow( textRenderer, name, (int) xsp, (int) ysp, 0xFFFFFF );
-        }
+        }*/
     }
 
 
