@@ -1,7 +1,7 @@
 // IDK what Mixins are but this code was here and didn't require much changing and i don't remember the changes i made if there were any
-package net.hvb007.keybindsgalore.mixin;
+package me.av306.multibind.mixin;
 
-import net.hvb007.keybindsgalore.KeybindsManager;
+import me.av306.multibind.KeybindsManager;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import org.spongepowered.asm.mixin.Mixin;
@@ -11,7 +11,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = KeyBinding.class, priority = -5000)
-public abstract class MixinKeyBinding {
+public abstract class KeyBindingMixin
+{
 
     @Shadow private InputUtil.Key boundKey;
 
