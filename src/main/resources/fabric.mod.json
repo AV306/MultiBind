@@ -4,7 +4,7 @@
 	"version": "${version}",
 
 	"name": "Multibind",
-	"description": "Adds a popup pie menu when a key with conflicting bindings is pressed. A fork of KeybindsGalore,oOriginally by Cael and updated to 1.20 by HVB007",
+	"description": "Adds a popup pie menu when a key with conflicting bindings is pressed. A fork of KeybindsGalore, originally by Cael and updated to 1.20 by HVB007",
 	"authors": [
 		"Blender",
 		"HVB007",
