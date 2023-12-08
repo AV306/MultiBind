@@ -34,7 +34,7 @@ public class KeybindsScreen extends Screen
     final MinecraftClient mc;
 
     private final float expansionFactorWhenSelected = 1.075f;
-    private final float deadZoneDistance = 20f;
+    private final float deadZoneDistanceSquared = 400f;
 
     public KeybindsScreen()
     {
@@ -55,7 +55,7 @@ public class KeybindsScreen extends Screen
     {
         super.render( context, mouseX, mouseY, delta );
 
-        this.selectedSlot = -1;
+        //this.selectedSlot = -1;
 
         // Pixel coords of screen centre
         int centreX = width / 2;
@@ -68,10 +68,8 @@ public class KeybindsScreen extends Screen
 
         // The other thing bothering me
         // Adds a "dead zone" so you can cancel quickly
-        float mouseDistanceFromCentre = MathHelper.sqrt(
-                (mouseX - centreX) * (mouseX - centreX) +
-                        (mouseY - centreY) * (mouseY - centreY)
-        );
+        float mouseDistanceFromCentreSquared = (mouseX - centreX) * (mouseX - centreX) +
+                        (mouseY - centreY) * (mouseY - centreY);
 
         // Determines how many segments to make for the pie menu
         int numberOfSectors = KeybindsManager.getConflicts( this.conflictedKey ).size();
@@ -80,100 +78,111 @@ public class KeybindsScreen extends Screen
         float step = MathHelper.PI / 180;
         float sectorAngle = (MathHelper.PI * 2) / numberOfSectors; // It's actually radians
 
+        // Get the exact sector index that is selected
+        this.selectedSlot = (int) (mouseAngle / sectorAngle);
 
-        // if cursor is in sector then it highlights
-        for ( int sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
+        if ( mouseDistanceFromCentreSquared < this.deadZoneDistanceSquared )
+            this.selectedSlot = -1;
+        
+        this.renderPieMenu( numberOfSectors, sectorAngle );
+        this.renderLabelTexts( context, numberOfSectors, sectorAngle );
+    }
+
+
+    private void renderPieMenu( int numberOfSectors, float sectorAngle )
+    {
+        // Setup rendering stuff
+        Tessellator tess = Tessellator.getInstance();
+        BufferBuilder buf = tess.getBuffer();
+        
+        RenderSystem.disableCull();
+        RenderSystem.enableBlend();
+        RenderSystem.setShader( GameRenderer::getPositionColorProgram );
+
+        buf.begin( VertexFormat.DrawMode.TRIANGLE_FAN, VertexFormats.POSITION_COLOR );
+
+        // Set centre vertex of pie menu
+        buf.vertex( centreX, centreY, 0 ).color( 0x40, 0x40, 0x40, 0x66 ).next();
+        
+        for ( var sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
         {
             // Check if the mouse angle is within the current sector
-            boolean mouseInSector = (sectorAngle * sectorIndex) < mouseAngle
+            /*boolean mouseInSector = (sectorAngle * sectorIndex) < mouseAngle
                     && mouseAngle < sectorAngle * (sectorIndex + 1)
-                    && mouseDistanceFromCentre > this.deadZoneDistance;
-
+                    && mouseDistanceFromCentre > this.deadZoneDistance;*/
 
             float radius = Math.max( 0F, Math.min( (ticksInScreen + delta - sectorIndex * 6F / numberOfSectors) * 40F, maxRadius ) );
 
-            if ( mouseInSector ) radius *= this.expansionFactorWhenSelected;
+            // Expand the sector if selected
+            if ( this.selectedSlot == sectorIndex ) radius *= this.expansionFactorWhenSelected;
 
-            // Render sector labels
+            int grayscaleColor = 0x40;
+
+            // Darken every other sector
+            if ( sectorIndex % 2 == 0 ) grayscaleColor += 0x19;
+                
+            // Highlight the selected sector
+            if ( this.selectedSlot == sectorIndex )
+                grayscaleColor = 0xFF; // Woah, I didn't know you could do this
+
+            // Draw an arc!!!
+            // TODO: maybe add another arc so the deadzone is visible?
+            for ( float i = 0; i < sectorAngle + step / 2; i += step )
             {
-                float rad = (sectorIndex + 0.5f) * sectorAngle;
+                float rad = i + sectorIndex * sectorAngle;
                 float xp = centreX + MathHelper.cos( rad ) * radius;
                 float yp = centreY + MathHelper.sin( rad ) * radius;
 
-                KeyBinding conflict = KeybindsManager.getConflicts( conflictedKey )
-                        .get( sectorIndex );
+                if ( i == 0 ) buf.vertex( xp, yp, 0 )
+                        .color( grayscaleColor, grayscaleColor, grayscaleColor, 0x66 )
+                        .next();
 
-                // The biggest nagging bug for me
-                // Tells you which control category the action goes in
-                String actionName = Text.translatable( conflict.getCategory() ).getString() + ": " +
-                        Text.translatable( conflict.getTranslationKey() ).getString();
-
-                float xsp = xp - 4;
-                float ysp = yp;
-
-                String name = (mouseInSector ? Formatting.UNDERLINE : Formatting.RESET) + actionName;
-
-                int width = textRenderer.getWidth( name );
-
-                if ( xsp < centreX )
-                    xsp -= width - 8;
-
-                if ( ysp < centreY )
-                    ysp -= 9;
-
-                context.drawTextWithShadow( textRenderer, name, (int) xsp, (int) ysp, 0xFFFFFF );
-            }
-
-            // Draw the pie menu :D
-            {
-                Tessellator tess = Tessellator.getInstance();
-                BufferBuilder buf = tess.getBuffer();
-                RenderSystem.disableCull();
-                RenderSystem.enableBlend();
-                RenderSystem.setShader( GameRenderer::getPositionColorProgram );
-
-                buf.begin( VertexFormat.DrawMode.TRIANGLE_FAN, VertexFormats.POSITION_COLOR );
-
-                int grayscaleColor = 0x40;
-
-                // Darken every other sector
-                if ( sectorIndex % 2 == 0 ) grayscaleColor += 0x19;
-
-                int r = grayscaleColor;
-                int g = grayscaleColor;
-                int b = grayscaleColor;
-
-                int a = 0x66;
-
-                // Set centre vertex of circle
-                //if ( sectorIndex == 0 )
-                buf.vertex( centreX, centreY, 0 ).color( r, g, b, a ).next();
-
-                // Now make the rest of the sector white
-                if ( mouseInSector )
-                {
-                    this.selectedSlot = sectorIndex;
-                    r = g = b = 0xFF; // Woah, I didn't know you could do this
-                }
-
-                // Draw an arc!!!
-                // TODO: maybe add another arc so the deadzone is visible?
-                for ( float i = 0; i < sectorAngle + step / 2; i += step )
-                {
-                    float rad = i + sectorIndex * sectorAngle;
-                    float xp = centreX + MathHelper.cos( rad ) * radius;
-                    float yp = centreY + MathHelper.sin( rad ) * radius;
-
-                    if ( i == 0 ) buf.vertex( xp, yp, 0 ).color( r, g, b, a ).next();
-
-                    buf.vertex( xp, yp, 0 ).color( r, g, b, a ).next();
-                }
-
-                tess.draw();
+                buf.vertex( xp, yp, 0 )
+                        .color( grayscaleColor, grayscaleColor, grayscaleColor, 0x66 )
+                        .next();
             }
         }
+
+        tess.draw();
     }
 
+    private void renderLabelTexts( DrawContext context, int numberOfSectors, float sectorAngle )
+    {
+        for ( var sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
+        {
+            float radius = Math.max( 0F, Math.min( (ticksInScreen + delta - sectorIndex * 6F / numberOfSectors) * 40F, maxRadius ) );
+            
+            float rad = (sectorIndex + 0.5f) * sectorAngle;
+            float xp = centreX + MathHelper.cos( rad ) * radius;
+            float yp = centreY + MathHelper.sin( rad ) * radius;
+
+            KeyBinding conflict = KeybindsManager.getConflicts( conflictedKey )
+                    .get( sectorIndex );
+
+            // The biggest nagging bug for me
+            // Tells you which control category the action goes in
+            String actionName = Text.translatable( conflict.getCategory() ).getString() + ": " +
+                    Text.translatable( conflict.getTranslationKey() ).getString();
+
+            float xsp = xp - 4;
+            float ysp = yp;
+
+            String name = (this.selectedSlot == sectorIndex
+                           ? Formatting.UNDERLINE 
+                           Formatting.RESET
+            ) + actionName;
+
+            int width = textRenderer.getWidth( name );
+
+            if ( xsp < centreX )
+                xsp -= width - 8;
+
+            if ( ysp < centreY )
+                ysp -= 9;
+
+            context.drawTextWithShadow( textRenderer, name, (int) xsp, (int) ysp, 0xFFFFFF );
+        }
+    }
 
     public void setConflictedKey( InputUtil.Key key )
     {
