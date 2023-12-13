@@ -22,19 +22,27 @@ import net.minecraft.client.util.NarratorManager;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.MathHelper;
+import org.lwjgl.opengl.GL11;
 
 // FIXME: Refactor classname to KeybindSelectorScreen
 public class KeybindsScreen extends Screen
 {
-    int ticksInScreen = 0; // TODO: rename to timeInScreen
-    int selectedSlot = -1;
+    private int ticksInScreen = 0; // TODO: rename to timeInScreen
+    private int selectedSlot = -1;
 
     private InputUtil.Key conflictedKey = InputUtil.UNKNOWN_KEY;
 
     final MinecraftClient mc;
 
-    private final float expansionFactorWhenSelected = 1.075f;
-    private final float deadZoneDistanceSquared = 400f;
+
+    private static final float EXPANSION_FACTOR_WHEN_SELECTED = 1.075f;
+    private static final float DEAD_ZONE_DISTANCE_SQUARED = 400f;
+    private static final int MAX_RADIUS = 80;
+
+    private static final short PIE_MENU_COLOR = 0x40;
+    private static final short PIE_MENU_ALPHA = 0x66;
+
+    private static final float STEP = MathHelper.PI / 180;
 
     public KeybindsScreen()
     {
@@ -60,7 +68,6 @@ public class KeybindsScreen extends Screen
         // Pixel coords of screen centre
         int centreX = width / 2;
         int centreY = height / 2;
-        int maxRadius = 80;
 
         // Angle of mouse, in [angle unit] from [axis]
         // TODO
@@ -75,21 +82,20 @@ public class KeybindsScreen extends Screen
         int numberOfSectors = KeybindsManager.getConflicts( this.conflictedKey ).size();
 
         // Use Minecraft's value of PI to remove casts
-        float step = MathHelper.PI / 180;
         float sectorAngle = (MathHelper.PI * 2) / numberOfSectors; // It's actually radians
 
         // Get the exact sector index that is selected
         this.selectedSlot = (int) (mouseAngle / sectorAngle);
 
-        if ( mouseDistanceFromCentreSquared < this.deadZoneDistanceSquared )
+        if ( mouseDistanceFromCentreSquared < DEAD_ZONE_DISTANCE_SQUARED )
             this.selectedSlot = -1;
         
-        this.renderPieMenu( numberOfSectors, sectorAngle );
-        this.renderLabelTexts( context, numberOfSectors, sectorAngle );
+        this.renderPieMenu( centreX, centreY, delta, numberOfSectors, sectorAngle );
+        this.renderLabelTexts( context, centreX, centreY, delta, numberOfSectors, sectorAngle );
     }
 
 
-    private void renderPieMenu( int numberOfSectors, float sectorAngle )
+    private void renderPieMenu( int centreX, int centreY, float delta, int numberOfSectors, float sectorAngle )
     {
         // Setup rendering stuff
         Tessellator tess = Tessellator.getInstance();
@@ -102,7 +108,9 @@ public class KeybindsScreen extends Screen
         buf.begin( VertexFormat.DrawMode.TRIANGLE_FAN, VertexFormats.POSITION_COLOR );
 
         // Set centre vertex of pie menu
-        buf.vertex( centreX, centreY, 0 ).color( 0x40, 0x40, 0x40, 0x66 ).next();
+        buf.vertex( centreX, centreY, 0 )
+                .color( PIE_MENU_COLOR, PIE_MENU_COLOR, PIE_MENU_COLOR, PIE_MENU_ALPHA )
+                .next();
         
         for ( var sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
         {
@@ -111,12 +119,9 @@ public class KeybindsScreen extends Screen
                     && mouseAngle < sectorAngle * (sectorIndex + 1)
                     && mouseDistanceFromCentre > this.deadZoneDistance;*/
 
-            float radius = Math.max( 0F, Math.min( (ticksInScreen + delta - sectorIndex * 6F / numberOfSectors) * 40F, maxRadius ) );
+            float radius = this.calculateRadius( delta, numberOfSectors, sectorIndex );
 
-            // Expand the sector if selected
-            if ( this.selectedSlot == sectorIndex ) radius *= this.expansionFactorWhenSelected;
-
-            int grayscaleColor = 0x40;
+            int grayscaleColor = PIE_MENU_COLOR;
 
             // Darken every other sector
             if ( sectorIndex % 2 == 0 ) grayscaleColor += 0x19;
@@ -127,18 +132,14 @@ public class KeybindsScreen extends Screen
 
             // Draw an arc!!!
             // TODO: maybe add another arc so the deadzone is visible?
-            for ( float i = 0; i < sectorAngle + step / 2; i += step )
+            for ( float i = 0; i < sectorAngle + STEP / 2; i += STEP )
             {
                 float rad = i + sectorIndex * sectorAngle;
                 float xp = centreX + MathHelper.cos( rad ) * radius;
                 float yp = centreY + MathHelper.sin( rad ) * radius;
 
-                if ( i == 0 ) buf.vertex( xp, yp, 0 )
-                        .color( grayscaleColor, grayscaleColor, grayscaleColor, 0x66 )
-                        .next();
-
                 buf.vertex( xp, yp, 0 )
-                        .color( grayscaleColor, grayscaleColor, grayscaleColor, 0x66 )
+                        .color( grayscaleColor, grayscaleColor, grayscaleColor, PIE_MENU_ALPHA )
                         .next();
             }
         }
@@ -146,11 +147,25 @@ public class KeybindsScreen extends Screen
         tess.draw();
     }
 
-    private void renderLabelTexts( DrawContext context, int numberOfSectors, float sectorAngle )
+    private float calculateRadius( float delta, int numberOfSectors, int sectorIndex )
+    {
+        float radius = Math.max( 0F, Math.min( (ticksInScreen + delta - sectorIndex * 6F / numberOfSectors) * 40F, MAX_RADIUS ) );
+
+        // Expand the sector if selected
+        if ( this.selectedSlot == sectorIndex ) radius *= EXPANSION_FACTOR_WHEN_SELECTED;
+        return radius;
+    }
+
+    private void renderLabelTexts(
+            DrawContext context,
+            int centreX, int centreY,
+            float delta,
+            int numberOfSectors, float sectorAngle
+    )
     {
         for ( var sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
         {
-            float radius = Math.max( 0F, Math.min( (ticksInScreen + delta - sectorIndex * 6F / numberOfSectors) * 40F, maxRadius ) );
+            float radius = Math.max( 0F, Math.min( (ticksInScreen + delta - sectorIndex * 6F / numberOfSectors) * 40F, MAX_RADIUS ) );
             
             float rad = (sectorIndex + 0.5f) * sectorAngle;
             float xp = centreX + MathHelper.cos( rad ) * radius;
@@ -169,7 +184,7 @@ public class KeybindsScreen extends Screen
 
             String name = (this.selectedSlot == sectorIndex
                            ? Formatting.UNDERLINE 
-                           Formatting.RESET
+                           : Formatting.RESET
             ) + actionName;
 
             int width = textRenderer.getWidth( name );

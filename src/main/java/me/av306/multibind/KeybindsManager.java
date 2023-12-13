@@ -27,18 +27,18 @@ public class KeybindsManager
     // - Blender (AV306)
 
     // Array of keys that cannot be multi-bound
-    /*private static final InputUtil.Key[] illegalKeys = {
+    private static final InputUtil.Key[] illegalKeys = {
                     InputUtil.fromTranslationKey( "key.keyboard.tab" ),
-                    InputUtil.fromTranslationKey( "key.keyboard.caps.lock" ),
+                    //InputUtil.fromTranslationKey( "key.keyboard.caps.lock" ),
                     InputUtil.fromTranslationKey( "key.keyboard.left.shift" ),
                     InputUtil.fromTranslationKey( "key.keyboard.left.control" ),
                     InputUtil.fromTranslationKey( "key.keyboard.space" ),
-                    InputUtil.fromTranslationKey( "key.keyboard.left.alt" ),
+                    //InputUtil.fromTranslationKey( "key.keyboard.left.alt" ),
                     InputUtil.fromTranslationKey( "key.keyboard.w" ),
                     InputUtil.fromTranslationKey( "key.keyboard.a" ),
                     InputUtil.fromTranslationKey( "key.keyboard.s" ),
                     InputUtil.fromTranslationKey( "key.keyboard.d" )
-    };*/
+    };
 
     // Creates an Hashmap that maps conflicting keys to the list of actions they perform
     // allowing us to get an easy list of what each key should do
@@ -55,13 +55,12 @@ public class KeybindsManager
         List<KeyBinding> matches = new ArrayList<>();
 
         // Check if the key is legal
-        // Skip this check because I don't think anyone would multibind WASD/Space,
         // and I need to multibind Alt/Caps
-        /*for ( InputUtil.Key illegalKey : illegalKeys )
+        for ( InputUtil.Key illegalKey : illegalKeys )
         {
             // Remove the illegal key from the multibinding list
             if ( key.equals( illegalKey ) ) return false;
-        }*/
+        }
 
         // Look for a KeyBinding bound to the key that was just pressed
         // and add it to the running list
@@ -83,7 +82,8 @@ public class KeybindsManager
         // Remove it if it's present (means it used to be valid, but has been changed)
         else
         {
-            conflictingKeys.remove( key );return false;
+            conflictingKeys.remove( key );
+            return false;
         }
     }
 
