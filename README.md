@@ -1,3 +1,45 @@
+## MultiBind
+
+> This project is a fork of [KeybindsGalore](), originally by [name] and updated to 1.20 by HVB007.
+
+> The project from which this is forked from can be found [here]().
+
+<br>
+
+This mod opens a pie menu when a key bound to multiple actions is pressed! No more weird behaviour on conflicting keys :D
+
+[TODO: GIF of pie menu]
+
+<br>
+
+### Modifications
+
+- Reduced the list of keys which when pressed, will not open a pie menu
+- Optimised conflict searching and rendering
+- Keybind labels now show their category instead of their name
+- Added a small region in the centre of the pie menu that will not activate any binding
+
+<br>
+
+### Coming soon
+
+- Configuration system for pie menu radius, transparency and color
+
+<br>
+
+### Gallery
+
+[TODO: GIF of pie menu opening, a sector being selected, and the action triggering]
+
+[TODO: GIF of pie menu opening, cursor moving out of and back into the deadzone, and the pie menu closing without any action happening]
+
+[TODO: GIF of pie menu opening, cursor moving through each sector in a clockwise manner, selecting one and closing the menu]
+
+<br>
+<br>
+
+[[ Old README below ]]
+
 # KeybindsGalore_HVB007_1.20.x
 Updated to 1.20 by HVB007.
 
