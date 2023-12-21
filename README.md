@@ -1,8 +1,8 @@
 ## MultiBind
 
-> This project is a fork of [KeybindsGalore](), originally by [name] and updated to 1.20 by HVB007.
+> This project is a fork of KeybindsGalore, originally by Cael and updated to 1.20 by HVB007.
 
-> The project from which this is forked from can be found [here]().
+> The project from which this is forked from can be found [here](https://github.com/HVB007og/KeybindsGalore_HVB007_1.20.x), and the original project is [here](https://github.com/CaelTheColher/KeybindsGalore).
 
 <br>
 
