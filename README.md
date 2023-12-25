@@ -2,7 +2,7 @@
 
 > This project is a fork of KeybindsGalore, originally by Cael and updated to 1.20 by HVB007.
 
-> The project from which this is forked from can be found [here](https://github.com/HVB007og/KeybindsGalore_HVB007_1.20.x), and the original project is [here](https://github.com/CaelTheColher/KeybindsGalore).
+> The project from which this is forked from can be found [here](https://github.com/HVB007og/KeybindsGalore_HVB007_1.20.x), and the [original project is here](https://github.com/CaelTheColher/KeybindsGalore).
 
 <br>
 
@@ -14,16 +14,16 @@ This mod opens a pie menu when a key bound to multiple actions is pressed! No mo
 
 ### Modifications
 
-- Reduced the list of keys which when pressed, will not open a pie menu
-- Optimised conflict searching and rendering
-- Keybind labels now show their category instead of their name
-- Added a small region in the centre of the pie menu that will not activate any binding
+- Reduced the list of keys, which when pressed, will not open a pie menu
+- Slightly optimised conflict searching and rendering
+- Keybind labels now show their category along with their name, for easier identification of exactly what action it triggers
+- Added a small region (deadzone) at the centre of the pie menu that will not activate any binding
 
 <br>
 
 ### Coming soon
 
-- Configuration system for pie menu radius, transparency and color
+- Configuration system for pie menu radius, transparency, animation and color
 
 <br>
 
