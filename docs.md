@@ -28,4 +28,4 @@ However, most mods have a key to open their settings menu, and this is often jus
 
 In this fork, the *category* of the action (The "heading" of the section in the keybinds menu, like `Gameplay` or `Xenon Features`) is also displayed along with the name. So, using the settings menu example from before, the pie menu is now `Some mod: Settings`, `Some other mod: Configurations`, etc, and now you can actually tell which menu you're opening!
 
-<sup>(full disclaimer: The "[Xenon](https://github.com/AV306/xenon)" mentioned here is another mod of mine and it's got [a bunch of neat things you might like](https://github.com/AV306/xenon/FEATURES.MD)!)</sup>
+<sup>(full disclaimer: The "[Xenon](https://github.com/AV306/xenon)" mentioned here is another mod of mine and it's got [a bunch of neat things you might like](https://github.com/AV306/xenon/blob/1.20-DEV/docs/FEATURES.md)!)</sup>
