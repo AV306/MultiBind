@@ -102,7 +102,7 @@ public class KeybindsManager
      */
     public static void openConflictMenu( InputUtil.Key key )
     {
-        KeybindsScreen screen = new KeybindsScreen( key );
+        KeybindSelectorScreen screen = new KeybindSelectorScreen( key );
         
         MinecraftClient.getInstance().setScreen( screen );
     }

@@ -22,12 +22,11 @@ import net.minecraft.client.util.NarratorManager;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.MathHelper;
-import org.lwjgl.opengl.GL11;
 
 // FIXME: Refactor classname to KeybindSelectorScreen
-public class KeybindsScreen extends Screen
+public class KeybindSelectorScreen extends Screen
 {
-    private int ticksInScreen = 0; // TODO: rename to timeInScreen
+    private int ticksInScreen = 0;
     private int selectedSlot = -1;
 
     private InputUtil.Key conflictedKey = InputUtil.UNKNOWN_KEY;
@@ -44,13 +43,15 @@ public class KeybindsScreen extends Screen
 
     private static final float STEP = MathHelper.PI / 180;
 
-    public KeybindsScreen()
+    private static final short TEXT_INSET = 4;
+
+    public KeybindSelectorScreen()
     {
         super( NarratorManager.EMPTY );
         this.mc = MinecraftClient.getInstance();
     }
 
-    public KeybindsScreen( InputUtil.Key key )
+    public KeybindSelectorScreen( InputUtil.Key key )
     {
         this();
 
@@ -58,7 +59,6 @@ public class KeybindsScreen extends Screen
     }
 
     @Override
-    // TODO: Split?
     public void render( DrawContext context, int mouseX, int mouseY, float delta )
     {
         super.render( context, mouseX, mouseY, delta );
@@ -167,35 +167,49 @@ public class KeybindsScreen extends Screen
         {
             float radius = Math.max( 0F, Math.min( (ticksInScreen + delta - sectorIndex * 6F / numberOfSectors) * 40F, MAX_RADIUS ) );
             
-            float rad = (sectorIndex + 0.5f) * sectorAngle;
-            float xp = centreX + MathHelper.cos( rad ) * radius;
-            float yp = centreY + MathHelper.sin( rad ) * radius;
+            float angle = (sectorIndex + 0.5f) * sectorAngle;
 
-            KeyBinding conflict = KeybindsManager.getConflicts( conflictedKey )
-                    .get( sectorIndex );
+            // Position in the middle of the arc
+            float xPos = centreX + MathHelper.cos( angle ) * radius;
+            float yPos = centreY + MathHelper.sin( angle ) * radius;
+
+            KeyBinding action = KeybindsManager.getConflicts( conflictedKey ).get( sectorIndex );
 
             // The biggest nagging bug for me
             // Tells you which control category the action goes in
-            String actionName = Text.translatable( conflict.getCategory() ).getString() + ": " +
-                    Text.translatable( conflict.getTranslationKey() ).getString();
+            String actionName =
+                    Text.translatable( action.getCategory() ).getString() + ": " +
+                    Text.translatable( action.getTranslationKey() ).getString();
 
-            float xsp = xp - 4;
-            float ysp = yp;
+            int textWidth = textRenderer.getWidth( actionName );
 
-            String name = (this.selectedSlot == sectorIndex
-                           ? Formatting.UNDERLINE 
-                           : Formatting.RESET
-            ) + actionName;
+            // Which sides of the screen are we on?
+            if ( xPos > centreX )
+            {
+                // Right side
+                xPos -= TEXT_INSET;
 
-            int width = textRenderer.getWidth( name );
+                // Check text going off-screen
+                if ( width - xPos < textWidth )
+                    xPos -= textWidth - width + xPos;
+            }
+            else
+            {
+                // Left side
+                xPos -= textWidth - TEXT_INSET;
 
-            if ( xsp < centreX )
-                xsp -= width - 8;
+                // Check text going off-screen
+                if ( xPos < 0 ) xPos = TEXT_INSET;
+            }
 
-            if ( ysp < centreY )
-                ysp -= 9;
+            // Move it closer to the arc
+            yPos -= yPos < centreY ? TEXT_INSET : -TEXT_INSET;
 
-            context.drawTextWithShadow( textRenderer, name, (int) xsp, (int) ysp, 0xFFFFFF );
+
+            actionName = (this.selectedSlot == sectorIndex ? Formatting.UNDERLINE : Formatting.RESET) + actionName;
+
+
+            context.drawTextWithShadow( textRenderer, actionName, (int) xPos, (int) yPos, 0xFFFFFF );
         }
     }
 
@@ -204,12 +218,9 @@ public class KeybindsScreen extends Screen
         this.conflictedKey = key;
     }
 
-    // Returns the angle of the line bounded by the given coordinates and the mouse position,
-    // from the vertical axis
+    // Returns the angle of the line bounded by the given coordinates and the mouse position from the vertical axis
     // (I think)
-    // This is why we study trigo, guys!
-    // Who said sin/cos/tan is useless?
-    // (I'll admit, outside of computer graphics, it kinda is)
+    // This is why we study trigo, guys
     private static double mouseAngle( int x, int y, int mx, int my )
     {
         return (MathHelper.atan2(my - y, mx - x) + Math.PI * 2) % (Math.PI * 2);
@@ -218,7 +229,8 @@ public class KeybindsScreen extends Screen
     @Override
     // Checks for Conflicted keys every gametick
     // and waits for input to press selected key once
-    public void tick() {
+    public void tick()
+    {
         super.tick();
         if ( !InputUtil.isKeyPressed(
                 MinecraftClient.getInstance().getWindow().getHandle(),
@@ -246,4 +258,12 @@ public class KeybindsScreen extends Screen
     public boolean shouldPause() {
         return false;
     }
+
+    // 1.20.2 onwards
+    /*@Override
+    public void renderBackground( DrawContext context, int mouseX, int mouseY, float delta )
+    {
+        // Remove the darkened background
+        //super.renderBackground( context, mouseX, mouseY, delta );
+    }*/
 }
