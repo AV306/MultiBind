@@ -79,7 +79,7 @@ public class KeybindSelectorScreen extends Screen
                         (mouseY - centreY) * (mouseY - centreY);
 
         // Determines how many segments to make for the pie menu
-        int numberOfSectors = KeybindsManager.getConflicts( this.conflictedKey ).size();
+        int numberOfSectors = KeybindManager.getConflicts( this.conflictedKey ).size();
 
         // Use Minecraft's value of PI to remove casts
         float sectorAngle = (MathHelper.PI * 2) / numberOfSectors; // It's actually radians
@@ -173,7 +173,7 @@ public class KeybindSelectorScreen extends Screen
             float xPos = centreX + MathHelper.cos( angle ) * radius;
             float yPos = centreY + MathHelper.sin( angle ) * radius;
 
-            KeyBinding action = KeybindsManager.getConflicts( conflictedKey ).get( sectorIndex );
+            KeyBinding action = KeybindManager.getConflicts( conflictedKey ).get( sectorIndex );
 
             // The biggest nagging bug for me
             // Tells you which control category the action goes in
@@ -227,8 +227,7 @@ public class KeybindSelectorScreen extends Screen
     }
 
     @Override
-    // Checks for Conflicted keys every gametick
-    // and waits for input to press selected key once
+    // Wait for input to press selected key once
     public void tick()
     {
         super.tick();
@@ -241,7 +240,7 @@ public class KeybindSelectorScreen extends Screen
             mc.setScreen( null );
             if ( selectedSlot != -1 )
             {
-                KeyBinding bind = KeybindsManager.getConflicts( conflictedKey )
+                KeyBinding bind = KeybindManager.getConflicts( conflictedKey )
                         .get( selectedSlot );
 
                 ((KeyBindingAccessor) bind).setPressed( true );

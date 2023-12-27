@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.Map;
 //import org.apache.logging.log4j.Logger;
 
 
-public class KeybindsManager
+public class KeybindManager
 {
 //    private static final Logger LOGGER = LogManager.getLogger();
 
@@ -54,13 +55,11 @@ public class KeybindsManager
     {
         List<KeyBinding> matches = new ArrayList<>();
 
-        // Check if the key is legal
-        // and I need to multibind Alt/Caps
+        // Stop if the key is illegal
         for ( InputUtil.Key illegalKey : illegalKeys )
-        {
-            // Remove the illegal key from the multibinding list
             if ( key.equals( illegalKey ) ) return false;
-        }
+
+
 
         // Look for a KeyBinding bound to the key that was just pressed
         // and add it to the running list
@@ -94,6 +93,7 @@ public class KeybindsManager
      */
     public static boolean hasConflicts( InputUtil.Key key )
     {
+	    //MinecraftClient.getInstance().player.sendMessage( Text.of( String.valueOf( conflictingKeys.containsKey( key ) ) ) );
         return conflictingKeys.containsKey( key );
     }
 
