@@ -18,7 +18,8 @@ This mod opens a pie menu when a key bound to multiple actions is pressed! No mo
 - Slightly optimised conflict searching and rendering
 - Keybind labels now show their category along with their name, for easier identification of exactly what action it triggers ([example](docs.md))
 - Added a small region (deadzone) at the centre of the pie menu that will not activate any binding (roughly 20px)
-
+- Added code that prevents label texts from going off the screen
+  
 <br>
 
 ## Coming soon
