@@ -259,10 +259,10 @@ public class KeybindSelectorScreen extends Screen
     }
 
     // 1.20.2 onwards
-    /*@Override
+    @Override
     public void renderBackground( DrawContext context, int mouseX, int mouseY, float delta )
     {
         // Remove the darkened background
-        //super.renderBackground( context, mouseX, mouseY, delta );
-    }*/
+        super.renderBackground( context, mouseX, mouseY, delta );
+    }
 }
