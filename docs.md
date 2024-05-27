@@ -29,3 +29,13 @@ However, most mods have a key to open their settings menu, and this is often jus
 In this fork, the *category* of the action (The "heading" of the section in the keybinds menu, like `Gameplay` or `Xenon Features`) is also displayed along with the name. So, using the settings menu example from before, the pie menu is now `Some mod: Settings`, `Some other mod: Configurations`, etc, and now you can actually tell which menu you're opening!
 
 <sup>(full disclaimer: The "[Xenon](https://github.com/AV306/xenon)" mentioned here is another mod of mine and it's got [a bunch of neat things you might like](https://github.com/AV306/xenon/blob/1.20-DEV/docs/FEATURES.md)!)</sup>
+
+<br>
+
+## Pie menu deadzone
+
+> The [original KeybindsGalore](https://github.com/HVB007og/KeybindsGalore_HVB007_1.20.x) has this too, plus a circle showing the deadzone!
+> Check it out if you want this feature before I get around to adding it :)
+> <sup>Just in case someone claims I'm copying them: [I've been intending to do it for quite a long time, but was just lazy to do it first](https://github.com/AV306/MultiBind/commit/331f085476f8c2a64330d0720e0e149ec7aa4d5a)</sup>
+
+If you accidentally press a pie menu key, there is a ~20px zone in the centre where no sector will be highlighted, and you can release the key without anything triggering.
