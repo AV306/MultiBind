@@ -53,6 +53,11 @@ public class KeybindSelectorScreen extends Screen
     {
         super( NarratorManager.EMPTY );
         this.mc = MinecraftClient.getInstance();
+
+        // Automatic radius calculations
+
+        if ( MAX_RADIUS == -1 ) MAX_RADIUS = this.mc.getWindow().getHeight() - 20;
+        if ( DEADZONE_RADIUS == -1 ) DEADZONE_RADIUS = MAX_RADIUS / 3;
     }
 
     public KeybindSelectorScreen( InputUtil.Key key )
@@ -167,7 +172,7 @@ public class KeybindSelectorScreen extends Screen
     {
         for ( var sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
         {
-            float radius = Math.max( 0F, Math.min( (ticksInScreen + delta - sectorIndex * 6F / numberOfSectors) * 40F, MAX_RADIUS ) );
+            float radius = calculateRadius( delta, numberOfSectors, sectorIndex );
             
             float angle = (sectorIndex + 0.5f) * sectorAngle;
 
