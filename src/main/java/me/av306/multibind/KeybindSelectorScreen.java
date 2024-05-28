@@ -36,16 +36,17 @@ public class KeybindSelectorScreen extends Screen
     private int centreX = 0, centreY = 0;
 
 
-    private static final float EXPANSION_FACTOR_WHEN_SELECTED = 1.1f;
-    private static int MAX_RADIUS = -1; // -1 for automatic
-    private static int DEADZONE_RADIUS = -1; // -1 for automatic
+    private static final float EXPANSION_FACTOR_WHEN_SELECTED = 20; // TODO: rename + dynamic calculation
+    private static int MAX_RADIUS = 0; // 0 for automatic
+    private static int DEADZONE_RADIUS = 0; // 0 for automatic
 
     private static final short PIE_MENU_COLOR = 0x40;
     private static final short PIE_MENU_COLOR_LIGHTEN_FACTOR = 0x19;
     private static final short PIE_MENU_ALPHA = 0x66;
 
     // The step to take for each quad drawn
-    private static final float STEP = MathHelper.PI / 18;
+    private static final int VERTICES_PER_SECTOR = 10;
+    //private static final float STEP = MathHelper.PI / 18;
 
     private static final short TEXT_INSET = 4;
 
@@ -76,11 +77,11 @@ public class KeybindSelectorScreen extends Screen
         //this.selectedSlot = -1;
 
         // Pixel coords of screen centre
-        centreX = width / 2;
-        centreY = height / 2;
+        this.centreX = this.width / 2;
+        this.centreY = this.height / 2;
 
-        if ( MAX_RADIUS == -1 ) MAX_RADIUS = Math.min( centreX - 30, centreY - 30 );
-        if ( DEADZONE_RADIUS == -1 ) DEADZONE_RADIUS = MAX_RADIUS / 8;
+        if ( MAX_RADIUS <= 0 ) MAX_RADIUS = Math.min( centreX - 30, centreY - 30 );
+        if ( DEADZONE_RADIUS <= 0 ) DEADZONE_RADIUS = MAX_RADIUS / 6;
 
         // Angle of mouse, in radians from +X-axis, centred on the origin
         double mouseAngle = mouseAngle( centreX, centreY, mouseX, mouseY );
@@ -92,13 +93,13 @@ public class KeybindSelectorScreen extends Screen
         int numberOfSectors = KeybindManager.getConflicts( this.conflictedKey ).size();
 
         // Calculate the angle occupied by each sector
-        float sectorAngle = (MathHelper.PI * 2) / numberOfSectors;
+        float sectorAngle = (MathHelper.TAU) / numberOfSectors;
 
         // Get the exact sector index that is selected
         this.selectedSector = (int) (mouseAngle / sectorAngle);
 
         // Deselect slot
-        if ( mouseDistanceFromCentre < DEADZONE_RADIUS )
+        if ( mouseDistanceFromCentre <= DEADZONE_RADIUS )
             this.selectedSector = -1;
         
         this.renderPieMenu( delta, numberOfSectors, sectorAngle );
@@ -117,7 +118,7 @@ public class KeybindSelectorScreen extends Screen
 
         buf.begin( VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR );
 
-        float angle = 0;
+        float startAngle = 0;
         for ( var sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
         {
             float outerRadius = calculateRadius( delta, numberOfSectors, sectorIndex );
@@ -132,39 +133,38 @@ public class KeybindSelectorScreen extends Screen
                 color = 0xFF;
             }
 
-            float targetAngle = angle + sectorAngle;
-            while ( angle <= targetAngle )
-            {
-                // I hope the compiler can optimise the sin/cos
-                float outerX = centreX + MathHelper.cos( angle ) * outerRadius;
-                float outerY = centreY + MathHelper.sin( angle ) * outerRadius;
-                float innerX = centreX + MathHelper.cos( angle ) * innerRadius;
-                float innerY = centreY + MathHelper.sin( angle ) * innerRadius;
+            drawSector( buf, startAngle, sectorAngle, innerRadius, outerRadius, color );
 
-                buf.vertex( outerX, outerY, 0 )
-                        .color( color, color, color, PIE_MENU_ALPHA )
-                        .next();
-
-                buf.vertex( innerX, innerY, 0 )
-                        .color( color, color, color, PIE_MENU_ALPHA )
-                        .next();
-
-                angle += STEP;
-            }
-
-            // Set angle back by a step so that the next two vertices overlap with the last two we just dreq
-            angle -= STEP;
+            startAngle += sectorAngle;
         }
 
         tess.draw();
     }
 
+    private void drawSector( BufferBuilder buf, float startAngle, float sectorAngle, float innerRadius, float outerRadius, short color )
+    {
+        for ( var i = 0; i <= VERTICES_PER_SECTOR; i++ )
+        {
+            float angle = startAngle + ((float) i / VERTICES_PER_SECTOR) * sectorAngle;
+
+            // Inner vertex
+            // FIXME: is the compiler smart enough to optimise the trigo?
+            buf.vertex( this.centreX + MathHelper.cos( angle ) * innerRadius, this.centreY + MathHelper.sin( angle ) * innerRadius, 0 )
+                    .color( color, color, color, PIE_MENU_ALPHA )
+                    .next();
+
+            buf.vertex( this.centreX + MathHelper.cos( angle ) * outerRadius, this.centreY + MathHelper.sin( angle ) * outerRadius, 0 )
+                    .color( color, color, color, PIE_MENU_ALPHA )
+                    .next();
+        }
+    }
+
     private float calculateRadius( float delta, int numberOfSectors, int sectorIndex )
     {
-        float radius = Math.max( 0F, Math.min( (ticksInScreen + delta - sectorIndex * 6F / numberOfSectors) * 40F, MAX_RADIUS ) );
+        float radius = Math.max( 0F, Math.min( (this.ticksInScreen + delta - sectorIndex * 6F / numberOfSectors) * 40F, MAX_RADIUS ) );
 
         // Expand the sector if selected
-        if ( this.selectedSector == sectorIndex ) radius *= EXPANSION_FACTOR_WHEN_SELECTED;
+        if ( this.selectedSector == sectorIndex ) radius += EXPANSION_FACTOR_WHEN_SELECTED;
         return radius;
     }
 
