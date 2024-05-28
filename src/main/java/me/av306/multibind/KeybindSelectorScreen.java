@@ -36,9 +36,9 @@ public class KeybindSelectorScreen extends Screen
     private int centreX = 0, centreY = 0;
 
 
-    private static final float EXPANSION_FACTOR_WHEN_SELECTED = 1.075f;
-    private static final int MAX_RADIUS = -1; // -1 for automatic
-    private static final int DEADZONE_RADIUS = -1; // -1 for automatic
+    private static final float EXPANSION_FACTOR_WHEN_SELECTED = 1.1f;
+    private static int MAX_RADIUS = -1; // -1 for automatic
+    private static int DEADZONE_RADIUS = -1; // -1 for automatic
 
     private static final short PIE_MENU_COLOR = 0x40;
     private static final short PIE_MENU_COLOR_LIGHTEN_FACTOR = 0x19;
@@ -56,8 +56,8 @@ public class KeybindSelectorScreen extends Screen
 
         // Automatic radius calculations
 
-        if ( MAX_RADIUS == -1 ) MAX_RADIUS = this.mc.getWindow().getHeight() - 20;
-        if ( DEADZONE_RADIUS == -1 ) DEADZONE_RADIUS = MAX_RADIUS / 3;
+        if ( MAX_RADIUS == -1 ) MAX_RADIUS = Math.min( this.height - 40, this.width - 40 );
+        if ( DEADZONE_RADIUS == -1 ) DEADZONE_RADIUS = MAX_RADIUS / 5;
     }
 
     public KeybindSelectorScreen( InputUtil.Key key )
@@ -132,10 +132,10 @@ public class KeybindSelectorScreen extends Screen
             while ( angle <= targetAngle )
             {
                 // I hope the compiler can optimise the sin/cos
-                float outerX = MathHelper.cos( angle ) * outerRadius;
-                float outerY = MathHelper.sin( angle ) * outerRadius;
-                float innerX = MathHelper.cos( angle ) * innerRadius;
-                float innerY = MathHelper.sin( angle ) * innerRadius;
+                float outerX = centreX + MathHelper.cos( angle ) * outerRadius;
+                float outerY = centreY + MathHelper.sin( angle ) * outerRadius;
+                float innerX = centreX + MathHelper.cos( angle ) * innerRadius;
+                float innerY = centreY + MathHelper.sin( angle ) * innerRadius;
 
                 buf.vertex( outerX, outerY, 0 )
                         .color( color, color, color, PIE_MENU_ALPHA )
@@ -234,7 +234,7 @@ public class KeybindSelectorScreen extends Screen
     }
 
     @Override
-    // Wait for input to press selected key once
+    // Wait for input to press selected key onc
     public void tick()
     {
         super.tick();
