@@ -45,7 +45,7 @@ public class KeybindSelectorScreen extends Screen
     private static final short PIE_MENU_ALPHA = 0x66;
 
     // The step to take for each quad drawn
-    private static final float STEP = MathHelper.PI / 180;
+    private static final float STEP = MathHelper.PI / 18;
 
     private static final short TEXT_INSET = 4;
 
@@ -56,8 +56,9 @@ public class KeybindSelectorScreen extends Screen
 
         // Automatic radius calculations
 
-        if ( MAX_RADIUS == -1 ) MAX_RADIUS = Math.min( this.height - 40, this.width - 40 );
-        if ( DEADZONE_RADIUS == -1 ) DEADZONE_RADIUS = MAX_RADIUS / 5;
+        //if ( MAX_RADIUS == -1 ) MAX_RADIUS = Math.min( this.height - 5, this.width - 5 );
+        //if ( DEADZONE_RADIUS == -1 ) DEADZONE_RADIUS = MAX_RADIUS / 5;
+        //System.out.println( MAX_RADIUS );
     }
 
     public KeybindSelectorScreen( InputUtil.Key key )
@@ -77,6 +78,9 @@ public class KeybindSelectorScreen extends Screen
         // Pixel coords of screen centre
         centreX = width / 2;
         centreY = height / 2;
+
+        if ( MAX_RADIUS == -1 ) MAX_RADIUS = Math.min( centreX - 30, centreY - 30 );
+        if ( DEADZONE_RADIUS == -1 ) DEADZONE_RADIUS = MAX_RADIUS / 8;
 
         // Angle of mouse, in radians from +X-axis, centred on the origin
         double mouseAngle = mouseAngle( centreX, centreY, mouseX, mouseY );
