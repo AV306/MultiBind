@@ -23,30 +23,34 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.MathHelper;
 
-// FIXME: Refactor classname to KeybindSelectorScreen
 public class KeybindSelectorScreen extends Screen
 {
+
     private int ticksInScreen = 0;
     private int selectedSector = -1;
 
     private InputUtil.Key conflictedKey = InputUtil.UNKNOWN_KEY;
 
-    final MinecraftClient mc;
+    private final MinecraftClient mc;
 
     private int centreX = 0, centreY = 0;
 
 
-    private static final float EXPANSION_FACTOR_WHEN_SELECTED = 20; // TODO: rename + dynamic calculation
-    private static int MAX_RADIUS = 0; // 0 for automatic
-    private static int DEADZONE_RADIUS = 0; // 0 for automatic
+    private static final float EXPANSION_FACTOR_WHEN_SELECTED = 1.1f; // TODO: rename + dynamic calculation
+    private static final int PIE_MENU_MARGIN = 20;
+    private static final int DEADZONE_FRACTION = 6;
+    // The number of corners the circle has (less = faster; but shouldn't have that much of an effect unless your pc is crap)
+    private static final int CIRCLE_VERTICES = 64;
+
+    private int maxRadius = 0;
+    private int deadzoneRadius = 0;
 
     private static final short PIE_MENU_COLOR = 0x40;
+    private static final short PIE_MENU_HIGHLIGHT_COLOR = 0xFF;
     private static final short PIE_MENU_COLOR_LIGHTEN_FACTOR = 0x19;
     private static final short PIE_MENU_ALPHA = 0x66;
 
-    // The step to take for each quad drawn
-    private static final int VERTICES_PER_SECTOR = 10;
-    //private static final float STEP = MathHelper.PI / 18;
+
 
     private static final short TEXT_INSET = 4;
 
@@ -54,12 +58,6 @@ public class KeybindSelectorScreen extends Screen
     {
         super( NarratorManager.EMPTY );
         this.mc = MinecraftClient.getInstance();
-
-        // Automatic radius calculations
-
-        //if ( MAX_RADIUS == -1 ) MAX_RADIUS = Math.min( this.height - 5, this.width - 5 );
-        //if ( DEADZONE_RADIUS == -1 ) DEADZONE_RADIUS = MAX_RADIUS / 5;
-        //System.out.println( MAX_RADIUS );
     }
 
     public KeybindSelectorScreen( InputUtil.Key key )
@@ -69,6 +67,7 @@ public class KeybindSelectorScreen extends Screen
         this.setConflictedKey( key );
     }
 
+    private boolean isFirstFrame = true;
     @Override
     public void render( DrawContext context, int mouseX, int mouseY, float delta )
     {
@@ -77,17 +76,23 @@ public class KeybindSelectorScreen extends Screen
         //this.selectedSlot = -1;
 
         // Pixel coords of screen centre
-        this.centreX = this.width / 2;
-        this.centreY = this.height / 2;
+        // Only set these on the first frame, since it's quite hard to resize the window while in the menu
+        if ( this.isFirstFrame )
+        {
+            this.centreX = this.width / 2;
+            this.centreY = this.height / 2;
 
-        if ( MAX_RADIUS <= 0 ) MAX_RADIUS = Math.min( centreX - 30, centreY - 30 );
-        if ( DEADZONE_RADIUS <= 0 ) DEADZONE_RADIUS = MAX_RADIUS / 6;
+            this.maxRadius = Math.min( this.centreX - PIE_MENU_MARGIN, this.centreY - PIE_MENU_MARGIN );
+            this.deadzoneRadius = maxRadius / DEADZONE_FRACTION;
+
+            this.isFirstFrame = false;
+        }
 
         // Angle of mouse, in radians from +X-axis, centred on the origin
-        double mouseAngle = mouseAngle( centreX, centreY, mouseX, mouseY );
+        double mouseAngle = mouseAngle( this.centreX, this.centreY, mouseX, mouseY );
 
-        float mouseDistanceFromCentre = MathHelper.sqrt( (mouseX - centreX) * (mouseX - centreX) +
-                        (mouseY - centreY) * (mouseY - centreY) );
+        float mouseDistanceFromCentre = MathHelper.sqrt( (mouseX - this.centreX) * (mouseX - this.centreX) +
+                        (mouseY - this.centreY) * (mouseY - this.centreY) );
 
         // Determines how many segments to make for the pie menu
         int numberOfSectors = KeybindManager.getConflicts( this.conflictedKey ).size();
@@ -99,7 +104,7 @@ public class KeybindSelectorScreen extends Screen
         this.selectedSector = (int) (mouseAngle / sectorAngle);
 
         // Deselect slot
-        if ( mouseDistanceFromCentre <= DEADZONE_RADIUS )
+        if ( mouseDistanceFromCentre <= this.deadzoneRadius )
             this.selectedSector = -1;
         
         this.renderPieMenu( delta, numberOfSectors, sectorAngle );
@@ -119,21 +124,23 @@ public class KeybindSelectorScreen extends Screen
         buf.begin( VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR );
 
         float startAngle = 0;
+        int vertices = CIRCLE_VERTICES / numberOfSectors;
         for ( var sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
         {
             float outerRadius = calculateRadius( delta, numberOfSectors, sectorIndex );
-            float innerRadius = DEADZONE_RADIUS;
+            float innerRadius = this.deadzoneRadius;
             short color = PIE_MENU_COLOR;
 
             if ( sectorIndex % 2 == 0 ) color += PIE_MENU_COLOR_LIGHTEN_FACTOR;
+
             if ( this.selectedSector == sectorIndex )
             {
                 //outerRadius *= EXPANSION_FACTOR_WHEN_SELECTED;
                 innerRadius *= EXPANSION_FACTOR_WHEN_SELECTED;
-                color = 0xFF;
+                color = PIE_MENU_HIGHLIGHT_COLOR;
             }
 
-            drawSector( buf, startAngle, sectorAngle, innerRadius, outerRadius, color );
+            drawSector( buf, startAngle, sectorAngle, vertices, innerRadius, outerRadius, color );
 
             startAngle += sectorAngle;
         }
@@ -141,11 +148,11 @@ public class KeybindSelectorScreen extends Screen
         tess.draw();
     }
 
-    private void drawSector( BufferBuilder buf, float startAngle, float sectorAngle, float innerRadius, float outerRadius, short color )
+    private void drawSector( BufferBuilder buf, float startAngle, float sectorAngle, int vertices, float innerRadius, float outerRadius, short color )
     {
-        for ( var i = 0; i <= VERTICES_PER_SECTOR; i++ )
+        for ( var i = 0; i <= vertices; i++ )
         {
-            float angle = startAngle + ((float) i / VERTICES_PER_SECTOR) * sectorAngle;
+            float angle = startAngle + ((float) i / vertices) * sectorAngle;
 
             // Inner vertex
             // FIXME: is the compiler smart enough to optimise the trigo?
@@ -161,10 +168,10 @@ public class KeybindSelectorScreen extends Screen
 
     private float calculateRadius( float delta, int numberOfSectors, int sectorIndex )
     {
-        float radius = Math.max( 0F, Math.min( (this.ticksInScreen + delta - sectorIndex * 6F / numberOfSectors) * 40F, MAX_RADIUS ) );
+        float radius = Math.max( 0F, Math.min( (this.ticksInScreen + delta - sectorIndex * 6F / numberOfSectors) * 40F, this.maxRadius ) );
 
         // Expand the sector if selected
-        if ( this.selectedSector == sectorIndex ) radius += EXPANSION_FACTOR_WHEN_SELECTED;
+        if ( this.selectedSector == sectorIndex ) radius *= EXPANSION_FACTOR_WHEN_SELECTED;
         return radius;
     }
 
@@ -181,10 +188,10 @@ public class KeybindSelectorScreen extends Screen
             float angle = (sectorIndex + 0.5f) * sectorAngle;
 
             // Position in the middle of the arc
-            float xPos = centreX + MathHelper.cos( angle ) * radius;
-            float yPos = centreY + MathHelper.sin( angle ) * radius;
+            float xPos = this.centreX + MathHelper.cos( angle ) * radius;
+            float yPos = this.centreY + MathHelper.sin( angle ) * radius;
 
-            KeyBinding action = KeybindManager.getConflicts( conflictedKey ).get( sectorIndex );
+            KeyBinding action = KeybindManager.getConflicts( this.conflictedKey ).get( sectorIndex );
 
             // The biggest nagging bug for me
             // Tells you which control category the action goes in
@@ -192,16 +199,16 @@ public class KeybindSelectorScreen extends Screen
                     Text.translatable( action.getCategory() ).getString() + ": " +
                     Text.translatable( action.getTranslationKey() ).getString();
 
-            int textWidth = textRenderer.getWidth( actionName );
+            int textWidth = this.textRenderer.getWidth( actionName );
 
             // Which sides of the screen are we on?
-            if ( xPos > centreX )
+            if ( xPos > this.centreX )
             {
                 // Right side
                 xPos -= TEXT_INSET;
 
                 // Check text going off-screen
-                if ( width - xPos < textWidth )
+                if ( this.width - xPos < textWidth )
                     xPos -= textWidth - width + xPos;
             }
             else
@@ -214,7 +221,7 @@ public class KeybindSelectorScreen extends Screen
             }
 
             // Move it closer to the arc
-            yPos -= yPos < centreY ? TEXT_INSET : -TEXT_INSET;
+            yPos -= yPos < this.centreY ? TEXT_INSET : -TEXT_INSET;
 
 
             actionName = (this.selectedSector == sectorIndex ? Formatting.UNDERLINE : Formatting.RESET) + actionName;
@@ -230,7 +237,6 @@ public class KeybindSelectorScreen extends Screen
     }
 
     // Returns the angle of the line bounded by the given coordinates and the mouse position from the vertical axis
-    // (I think)
     // This is why we study trigo, guys
     private static double mouseAngle( int x, int y, int mx, int my )
     {
@@ -244,28 +250,29 @@ public class KeybindSelectorScreen extends Screen
         super.tick();
         if ( !InputUtil.isKeyPressed(
                 MinecraftClient.getInstance().getWindow().getHandle(),
-                conflictedKey.getCode()
+                this.conflictedKey.getCode()
             )
         )
         {
-            mc.setScreen( null );
-            if ( selectedSector != -1 )
+            this.mc.setScreen( null );
+            if ( this.selectedSector != -1 )
             {
                 KeyBinding bind = KeybindManager.getConflicts( conflictedKey )
-                        .get( selectedSector );
+                        .get( this.selectedSector );
 
                 ((KeyBindingAccessor) bind).setPressed( true );
                 ((KeyBindingAccessor) bind).setTimesPressed( 1 );
             }
         }
 
-        ticksInScreen++;
+        this.ticksInScreen++;
     }
 
     @Override
     // Don't pause the game when this screen is open
     // actually why not
-    public boolean shouldPause() {
+    public boolean shouldPause()
+    {
         return false;
     }
 
