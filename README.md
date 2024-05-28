@@ -1,24 +1,26 @@
 # MultiBind
 
+> [!NOTE]<br>
 > This project is a fork of KeybindsGalore, originally by Cael and updated to 1.20 by HVB007.
-
-> The project from which this is forked from can be found [here](https://github.com/HVB007og/KeybindsGalore_HVB007_1.20.x), and the [original project is here](https://github.com/CaelTheColher/KeybindsGalore).
+> <br>[HVB007's project is here](https://github.com/HVB007og/KeybindsGalore_HVB007_1.20.x), and Cael's [original project is here](https://github.com/CaelTheColher/KeybindsGalore).
 
 <br>
 
 This mod opens a pie menu when a key bound to multiple actions is pressed! No more weird behaviour on conflicting keys :D
 
-[TODO: GIF of pie menu]
+<p align="center">
+  <img src="https://github.com/AV306/MultiBind/blob/346c3698d849e3c044e2d02d8c012f0339a0e449/images/IMG_2907.jpeg" width="70%" />
+</p>
 
 <br>
 
 ## Modifications to Original
 
-- Reduced the list of keys, which when pressed, will not open a pie menu (more details [here](docs.md))
+- Reduced the list of keys which will never open a pie menu (more details [here](docs.md))
 - Slightly optimised conflict searching and rendering
-- Keybind labels now show their category along with their name, for easier identification of exactly what action it triggers ([example](docs.md))
-- Added a small region (deadzone) at the centre of the pie menu that will not activate any binding (roughly 20px)
-- Added code that prevents label texts from going off the screen
+- Keybind labels now show their category along with their name, for easier identification ([example](docs.md))
+- Added a small region (deadzone) at the centre of the pie menu that will not activate any binding
+- Label texts no longer run off the screen
   
 <br>
 
