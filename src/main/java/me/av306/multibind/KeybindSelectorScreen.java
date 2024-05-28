@@ -27,20 +27,24 @@ import net.minecraft.util.math.MathHelper;
 public class KeybindSelectorScreen extends Screen
 {
     private int ticksInScreen = 0;
-    private int selectedSlot = -1;
+    private int selectedSector = -1;
 
     private InputUtil.Key conflictedKey = InputUtil.UNKNOWN_KEY;
 
     final MinecraftClient mc;
 
+    private int centreX = 0, centreY = 0;
+
 
     private static final float EXPANSION_FACTOR_WHEN_SELECTED = 1.075f;
-    private static final float DEAD_ZONE_DISTANCE_SQUARED = 400f;
-    private static final int MAX_RADIUS = 80;
+    private static final int MAX_RADIUS = -1; // -1 for automatic
+    private static final int DEADZONE_RADIUS = -1; // -1 for automatic
 
     private static final short PIE_MENU_COLOR = 0x40;
+    private static final short PIE_MENU_COLOR_LIGHTEN_FACTOR = 0x19;
     private static final short PIE_MENU_ALPHA = 0x66;
 
+    // The step to take for each quad drawn
     private static final float STEP = MathHelper.PI / 180;
 
     private static final short TEXT_INSET = 4;
@@ -66,82 +70,81 @@ public class KeybindSelectorScreen extends Screen
         //this.selectedSlot = -1;
 
         // Pixel coords of screen centre
-        int centreX = width / 2;
-        int centreY = height / 2;
+        centreX = width / 2;
+        centreY = height / 2;
 
-        // Angle of mouse, in [angle unit] from [axis]
-        // TODO
+        // Angle of mouse, in radians from +X-axis, centred on the origin
         double mouseAngle = mouseAngle( centreX, centreY, mouseX, mouseY );
 
-        // The other thing bothering me
-        // Adds a "dead zone" so you can cancel quickly
-        float mouseDistanceFromCentreSquared = (mouseX - centreX) * (mouseX - centreX) +
-                        (mouseY - centreY) * (mouseY - centreY);
+        float mouseDistanceFromCentre = MathHelper.sqrt( (mouseX - centreX) * (mouseX - centreX) +
+                        (mouseY - centreY) * (mouseY - centreY) );
 
         // Determines how many segments to make for the pie menu
         int numberOfSectors = KeybindManager.getConflicts( this.conflictedKey ).size();
 
-        // Use Minecraft's value of PI to remove casts
-        float sectorAngle = (MathHelper.PI * 2) / numberOfSectors; // It's actually radians
+        // Calculate the angle occupied by each sector
+        float sectorAngle = (MathHelper.PI * 2) / numberOfSectors;
 
         // Get the exact sector index that is selected
-        this.selectedSlot = (int) (mouseAngle / sectorAngle);
+        this.selectedSector = (int) (mouseAngle / sectorAngle);
 
-        if ( mouseDistanceFromCentreSquared < DEAD_ZONE_DISTANCE_SQUARED )
-            this.selectedSlot = -1;
+        // Deselect slot
+        if ( mouseDistanceFromCentre < DEADZONE_RADIUS )
+            this.selectedSector = -1;
         
-        this.renderPieMenu( centreX, centreY, delta, numberOfSectors, sectorAngle );
-        this.renderLabelTexts( context, centreX, centreY, delta, numberOfSectors, sectorAngle );
+        this.renderPieMenu( delta, numberOfSectors, sectorAngle );
+        this.renderLabelTexts( context, delta, numberOfSectors, sectorAngle );
     }
 
 
-    private void renderPieMenu( int centreX, int centreY, float delta, int numberOfSectors, float sectorAngle )
+    private void renderPieMenu( float delta, int numberOfSectors, float sectorAngle )
     {
         // Setup rendering stuff
         Tessellator tess = Tessellator.getInstance();
         BufferBuilder buf = tess.getBuffer();
-        
         RenderSystem.disableCull();
         RenderSystem.enableBlend();
         RenderSystem.setShader( GameRenderer::getPositionColorProgram );
 
-        buf.begin( VertexFormat.DrawMode.TRIANGLE_FAN, VertexFormats.POSITION_COLOR );
+        buf.begin( VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR );
 
-        // Set centre vertex of pie menu
-        buf.vertex( centreX, centreY, 0 )
-                .color( PIE_MENU_COLOR, PIE_MENU_COLOR, PIE_MENU_COLOR, PIE_MENU_ALPHA )
-                .next();
-        
+        float angle = 0;
         for ( var sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
         {
-            // Check if the mouse angle is within the current sector
-            /*boolean mouseInSector = (sectorAngle * sectorIndex) < mouseAngle
-                    && mouseAngle < sectorAngle * (sectorIndex + 1)
-                    && mouseDistanceFromCentre > this.deadZoneDistance;*/
+            float outerRadius = calculateRadius( delta, numberOfSectors, sectorIndex );
+            float innerRadius = DEADZONE_RADIUS;
+            short color = PIE_MENU_COLOR;
 
-            float radius = this.calculateRadius( delta, numberOfSectors, sectorIndex );
-
-            int grayscaleColor = PIE_MENU_COLOR;
-
-            // Darken every other sector
-            if ( sectorIndex % 2 == 0 ) grayscaleColor += 0x19;
-                
-            // Highlight the selected sector
-            if ( this.selectedSlot == sectorIndex )
-                grayscaleColor = 0xFF; // Woah, I didn't know you could do this
-
-            // Draw an arc!!!
-            // TODO: maybe add another arc so the deadzone is visible?
-            for ( float i = 0; i < sectorAngle + STEP / 2; i += STEP )
+            if ( sectorIndex % 2 == 0 ) color += PIE_MENU_COLOR_LIGHTEN_FACTOR;
+            if ( this.selectedSector == sectorIndex )
             {
-                float rad = i + sectorIndex * sectorAngle;
-                float xp = centreX + MathHelper.cos( rad ) * radius;
-                float yp = centreY + MathHelper.sin( rad ) * radius;
-
-                buf.vertex( xp, yp, 0 )
-                        .color( grayscaleColor, grayscaleColor, grayscaleColor, PIE_MENU_ALPHA )
-                        .next();
+                //outerRadius *= EXPANSION_FACTOR_WHEN_SELECTED;
+                innerRadius *= EXPANSION_FACTOR_WHEN_SELECTED;
+                color = 0xFF;
             }
+
+            float targetAngle = angle + sectorAngle;
+            while ( angle <= targetAngle )
+            {
+                // I hope the compiler can optimise the sin/cos
+                float outerX = MathHelper.cos( angle ) * outerRadius;
+                float outerY = MathHelper.sin( angle ) * outerRadius;
+                float innerX = MathHelper.cos( angle ) * innerRadius;
+                float innerY = MathHelper.sin( angle ) * innerRadius;
+
+                buf.vertex( outerX, outerY, 0 )
+                        .color( color, color, color, PIE_MENU_ALPHA )
+                        .next();
+
+                buf.vertex( innerX, innerY, 0 )
+                        .color( color, color, color, PIE_MENU_ALPHA )
+                        .next();
+
+                angle += STEP;
+            }
+
+            // Set angle back by a step so that the next two vertices overlap with the last two we just dreq
+            angle -= STEP;
         }
 
         tess.draw();
@@ -152,13 +155,12 @@ public class KeybindSelectorScreen extends Screen
         float radius = Math.max( 0F, Math.min( (ticksInScreen + delta - sectorIndex * 6F / numberOfSectors) * 40F, MAX_RADIUS ) );
 
         // Expand the sector if selected
-        if ( this.selectedSlot == sectorIndex ) radius *= EXPANSION_FACTOR_WHEN_SELECTED;
+        if ( this.selectedSector == sectorIndex ) radius *= EXPANSION_FACTOR_WHEN_SELECTED;
         return radius;
     }
 
     private void renderLabelTexts(
             DrawContext context,
-            int centreX, int centreY,
             float delta,
             int numberOfSectors, float sectorAngle
     )
@@ -206,7 +208,7 @@ public class KeybindSelectorScreen extends Screen
             yPos -= yPos < centreY ? TEXT_INSET : -TEXT_INSET;
 
 
-            actionName = (this.selectedSlot == sectorIndex ? Formatting.UNDERLINE : Formatting.RESET) + actionName;
+            actionName = (this.selectedSector == sectorIndex ? Formatting.UNDERLINE : Formatting.RESET) + actionName;
 
 
             context.drawTextWithShadow( textRenderer, actionName, (int) xPos, (int) yPos, 0xFFFFFF );
@@ -238,10 +240,10 @@ public class KeybindSelectorScreen extends Screen
         )
         {
             mc.setScreen( null );
-            if ( selectedSlot != -1 )
+            if ( selectedSector != -1 )
             {
                 KeyBinding bind = KeybindManager.getConflicts( conflictedKey )
-                        .get( selectedSlot );
+                        .get( selectedSector );
 
                 ((KeyBindingAccessor) bind).setPressed( true );
                 ((KeyBindingAccessor) bind).setTimesPressed( 1 );
