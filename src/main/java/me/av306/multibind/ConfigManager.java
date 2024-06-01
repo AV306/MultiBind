@@ -1,21 +1,45 @@
 package me.av306.multibind;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.IOError;
 import java.io.IOException;
-import java.util.Hashtable;
 import java.util.Locale;
 import java.lang.reflect.Field;
 
 public class ConfigManager
 {
     private final String configFilePath;
+
+    private File configFile;
     
     public ConfigManager( String configFilePath )
     {
         this.configFilePath = configFilePath;
+        this.checkConfigFile();
         this.readConfigFile();
+    }
+
+    private void checkConfigFile()
+    {
+        this.configFile = new File( this.configFilePath );
+        if ( !this.configFile.exists() )
+        {
+            try ( FileOutputStream fos = new FileOutputStream( this.configFile ); )
+            {
+                this.configFile.createNewFile();
+                
+                MultiBind.LOGGER.warn( "MultiBind config file not found, copying embedded one" );
+                fos.write( this.getClass().getResourceAsStream( "/multibind_config.properties" ).readAllBytes() );
+            }
+            catch ( IOException ioe )
+            {
+                MultiBind.LOGGER.error( "IOException while copying default configs!" );
+                ioe.printStackTrace();
+            }
+        }
     }
 
     private void readConfigFile()
