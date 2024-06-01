@@ -49,8 +49,8 @@ public class ConfigManager
             // Iterate over each line in the file
             for ( String line : reader.lines().toArray( String[]::new ) )
             {
-                // Skip comments
-                if ( line.startsWith( "#" ) ) continue;
+                // Skip comments and blank lines
+                if ( line.startsWith( "#" ) || line.isBlank() ) continue;
                 
                 // Split it by the equals sign (.properties format)
                 String[] entry = line.split( "=" );
@@ -58,8 +58,8 @@ public class ConfigManager
                 try
                 {
                     Field f = KeybindSelectorScreen.class.getDeclaredField( entry[0].toUpperCase( Locale.ENGLISH ) );
-                    
-                    if ( Short.class.isAssignableFrom( f.getClass() ) )
+                    //MultiBind.LOGGER.info( f.getType().getName() );
+                    if ( f.getType().isAssignableFrom( short.class ) )
                     {
                         // Short value
                         f.setShort( null, Short.parseShort(
@@ -67,7 +67,7 @@ public class ConfigManager
                                 16 )
                         );
                     }
-                    else if ( Integer.class.isAssignableFrom( f.getClass() ) )
+                    else if ( f.getType().isAssignableFrom( int.class ) )
                     {
                         // Integer value
                         f.setInt(
@@ -75,12 +75,16 @@ public class ConfigManager
                             Integer.parseInt( entry[1] )
                         );
                     }
-                    else if ( Float.class.isAssignableFrom( f.getClass() ) )
+                    else if ( f.getType().isAssignableFrom( float.class ) )
                     {
                         f.setFloat(
                             null,
                             Float.parseFloat( entry[1] )
                         );
+                    }
+                    else
+                    {
+                        MultiBind.LOGGER.error( "Unrecognised data type for config entry {}", line );
                     }
                 }
                 catch ( ArrayIndexOutOfBoundsException oobe )

@@ -27,19 +27,19 @@ public class KeybindSelectorScreen extends Screen
 {
     // Configurable variables
 
-    private static float EXPANSION_FACTOR_WHEN_SELECTED = 1.1f;
-    private static int PIE_MENU_MARGIN = 20;
-    private static float PIE_MENU_SCALE = 0.6f;
-    private static float DEADZONE_SCALE = 0.3f;
+    public static float EXPANSION_FACTOR_WHEN_SELECTED = 1.1f;
+    public static int PIE_MENU_MARGIN = 20;
+    public static float PIE_MENU_SCALE = 0.6f;
+    public static float DEADZONE_SCALE = 0.3f;
 
-    private static int CIRCLE_VERTICES = 64;
+    public static int CIRCLE_VERTICES = 64;
 
-    private static short PIE_MENU_COLOR = 0x40;
-    private static short PIE_MENU_HIGHLIGHT_COLOR = 0xFF;
-    private static short PIE_MENU_COLOR_LIGHTEN_FACTOR = 0x19;
-    private static short PIE_MENU_ALPHA = 0x66;
+    public static short PIE_MENU_COLOR = 0x40;
+    public static short PIE_MENU_HIGHLIGHT_COLOR = 0xFF;
+    public static short PIE_MENU_COLOR_LIGHTEN_FACTOR = 0x19;
+    public static short PIE_MENU_ALPHA = 0x66;
 
-    private static final short LABEL_TEXT_INSET = 4;
+    public static short LABEL_TEXT_INSET = 4;
 
     // Instance variables
     private int ticksInScreen = 0;
