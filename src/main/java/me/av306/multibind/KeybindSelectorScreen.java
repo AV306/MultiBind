@@ -25,7 +25,23 @@ import net.minecraft.util.math.MathHelper;
 
 public class KeybindSelectorScreen extends Screen
 {
+    // Configurable variables
 
+    private static float EXPANSION_FACTOR_WHEN_SELECTED = 1.1f;
+    private static int PIE_MENU_MARGIN = 20;
+    private static float PIE_MENU_SCALE = 0.6f;
+    private static float DEADZONE_SCALE = 0.3f;
+
+    private static int CIRCLE_VERTICES = 64;
+
+    private static short PIE_MENU_COLOR = 0x40;
+    private static short PIE_MENU_HIGHLIGHT_COLOR = 0xFF;
+    private static short PIE_MENU_COLOR_LIGHTEN_FACTOR = 0x19;
+    private static short PIE_MENU_ALPHA = 0x66;
+
+    private static final short LABEL_TEXT_INSET = 4;
+
+    // Instance variables
     private int ticksInScreen = 0;
     private int selectedSector = -1;
 
@@ -35,24 +51,8 @@ public class KeybindSelectorScreen extends Screen
 
     private int centreX = 0, centreY = 0;
 
-
-    private static final float EXPANSION_FACTOR_WHEN_SELECTED = 1.1f; // TODO: rename + dynamic calculation
-    private static final int PIE_MENU_MARGIN = 20;
-    private static final int DEADZONE_FRACTION = 6;
-    // The number of corners the circle has (less = faster; but shouldn't have that much of an effect unless your pc is crap)
-    private static final int CIRCLE_VERTICES = 64;
-
-    private int maxRadius = 0;
-    private int deadzoneRadius = 0;
-
-    private static final short PIE_MENU_COLOR = 0x40;
-    private static final short PIE_MENU_HIGHLIGHT_COLOR = 0xFF;
-    private static final short PIE_MENU_COLOR_LIGHTEN_FACTOR = 0x19;
-    private static final short PIE_MENU_ALPHA = 0x66;
-
-
-
-    private static final short TEXT_INSET = 4;
+    private float maxRadius = 0;
+    private float deadzoneRadius = 0;
 
     public KeybindSelectorScreen()
     {
@@ -76,14 +76,16 @@ public class KeybindSelectorScreen extends Screen
         //this.selectedSlot = -1;
 
         // Pixel coords of screen centre
-        // Only set these on the first frame, since it's quite hard to resize the window while in the menu
+        // Only set these on the first frame
+        // Side effect: If window is resized when the screen is open, the menu won't update
         if ( this.isFirstFrame )
         {
+            // Set centre of screen
             this.centreX = this.width / 2;
             this.centreY = this.height / 2;
 
-            this.maxRadius = Math.min( this.centreX - PIE_MENU_MARGIN, this.centreY - PIE_MENU_MARGIN );
-            this.deadzoneRadius = maxRadius / DEADZONE_FRACTION;
+            this.maxRadius = Math.min( (this.centreX * PIE_MENU_SCALE) - PIE_MENU_MARGIN, (this.centreY * PIE_MENU_SCALE) - PIE_MENU_MARGIN );
+            this.deadzoneRadius = maxRadius * DEADZONE_SCALE;
 
             this.isFirstFrame = false;
         }
@@ -205,7 +207,7 @@ public class KeybindSelectorScreen extends Screen
             if ( xPos > this.centreX )
             {
                 // Right side
-                xPos -= TEXT_INSET;
+                xPos -= LABEL_TEXT_INSET;
 
                 // Check text going off-screen
                 if ( this.width - xPos < textWidth )
@@ -214,14 +216,14 @@ public class KeybindSelectorScreen extends Screen
             else
             {
                 // Left side
-                xPos -= textWidth - TEXT_INSET;
+                xPos -= textWidth - LABEL_TEXT_INSET;
 
                 // Check text going off-screen
-                if ( xPos < 0 ) xPos = TEXT_INSET;
+                if ( xPos < 0 ) xPos = LABEL_TEXT_INSET;
             }
 
             // Move it closer to the arc
-            yPos -= yPos < this.centreY ? TEXT_INSET : -TEXT_INSET;
+            yPos -= yPos < this.centreY ? LABEL_TEXT_INSET : -LABEL_TEXT_INSET;
 
 
             actionName = (this.selectedSector == sectorIndex ? Formatting.UNDERLINE : Formatting.RESET) + actionName;
