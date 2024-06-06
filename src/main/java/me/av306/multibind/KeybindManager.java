@@ -58,7 +58,6 @@ public class KeybindManager
 
         // Look for a KeyBinding bound to the key that was just pressed
         // and add it to the running list
-        // FIXME: Intellisense says there's a resource leak here
         for ( KeyBinding binding : MinecraftClient.getInstance().options.allKeys )
             if ( binding.matchesKey( key.getCode(), -1 ) )
                 matches.add( binding );
