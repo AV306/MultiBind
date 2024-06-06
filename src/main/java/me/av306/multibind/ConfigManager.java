@@ -42,7 +42,7 @@ public class ConfigManager
         }
     }
 
-    private void readConfigFile()
+    public void readConfigFile()
     {
         try ( BufferedReader reader = new BufferedReader( new FileReader( this.configFilePath ) ) )
         {
@@ -57,6 +57,7 @@ public class ConfigManager
 
                 try
                 {
+                    // Saw someone get locale problemd when parsing decimal places (comma vs period) once, not taking the chance
                     Field f = KeybindSelectorScreen.class.getDeclaredField( entry[0].toUpperCase( Locale.ENGLISH ) );
                     //MultiBind.LOGGER.info( f.getType().getName() );
                     if ( f.getType().isAssignableFrom( short.class ) )

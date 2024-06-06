@@ -39,7 +39,7 @@ public class KeybindSelectorScreen extends Screen
     public static short PIE_MENU_COLOR_LIGHTEN_FACTOR = 0x19;
     public static short PIE_MENU_ALPHA = 0x66;
 
-    public static short LABEL_TEXT_INSET = 4;
+    public static int LABEL_TEXT_INSET = 4;
 
     // Instance variables
     private int ticksInScreen = 0;
@@ -174,6 +174,7 @@ public class KeybindSelectorScreen extends Screen
 
         // Expand the sector if selected
         if ( this.selectedSector == sectorIndex ) radius *= EXPANSION_FACTOR_WHEN_SELECTED;
+
         return radius;
     }
 
@@ -203,7 +204,7 @@ public class KeybindSelectorScreen extends Screen
 
             int textWidth = this.textRenderer.getWidth( actionName );
 
-            // Which sides of the screen are we on?
+            // Which side of the screen are we on?
             if ( xPos > this.centreX )
             {
                 // Right side
@@ -211,7 +212,7 @@ public class KeybindSelectorScreen extends Screen
 
                 // Check text going off-screen
                 if ( this.width - xPos < textWidth )
-                    xPos -= textWidth - width + xPos;
+                    xPos -= textWidth - this.width + xPos;
             }
             else
             {
@@ -222,12 +223,10 @@ public class KeybindSelectorScreen extends Screen
                 if ( xPos < 0 ) xPos = LABEL_TEXT_INSET;
             }
 
-            // Move it closer to the arc
-            yPos -= yPos < this.centreY ? LABEL_TEXT_INSET : -LABEL_TEXT_INSET;
-
+            // Move it closer to the centre of the circle
+            yPos -= LABEL_TEXT_INSET;
 
             actionName = (this.selectedSector == sectorIndex ? Formatting.UNDERLINE : Formatting.RESET) + actionName;
-
 
             context.drawTextWithShadow( textRenderer, actionName, (int) xPos, (int) yPos, 0xFFFFFF );
         }

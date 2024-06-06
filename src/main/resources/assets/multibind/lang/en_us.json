@@ -1,0 +1,5 @@
+{
+  "category.multibind.keybinds": "MultiBind",
+  "key.multibind.reloadconfigs": "Reload config file",
+  "text.multibind.configreloaded": "Configs reloaded!"
+}

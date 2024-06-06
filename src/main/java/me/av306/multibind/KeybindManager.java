@@ -4,16 +4,10 @@ import com.google.common.collect.Maps;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-//logger
-//import net.minecraft.client.MinecraftClient;
-//import org.apache.logging.log4j.LogManager;
-//import org.apache.logging.log4j.Logger;
 
 
 public class KeybindManager
@@ -28,6 +22,7 @@ public class KeybindManager
     // - Blender (AV306)
 
     // Array of keys that cannot be multi-bound
+    // TODO: make this configurable
     private static final InputUtil.Key[] illegalKeys = {
                     InputUtil.fromTranslationKey( "key.keyboard.tab" ),
                     //InputUtil.fromTranslationKey( "key.keyboard.caps.lock" ),
