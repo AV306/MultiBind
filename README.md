@@ -1,4 +1,4 @@
-# MultiBind
+# KeybindsGalore Plus
 
 > [!NOTE]<br>
 > This project is a fork of KeybindsGalore, originally by Cael and updated to 1.20 by HVB007.
