@@ -35,6 +35,12 @@ This mod opens a pie menu when a key bound to multiple actions is pressed! No mo
 
 <br>
 
+## Big Thanks to
+
+Racoocoo (on the FabricMC discord) for telling me about the Java 21 issue and pointing out that GitHub issues were disabled!
+
+<br>
+
 ## Gallery
 
 [TODO: GIF of pie menu opening, a sector being selected, and the action triggering]
