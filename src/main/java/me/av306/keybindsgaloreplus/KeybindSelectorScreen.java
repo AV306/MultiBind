@@ -8,10 +8,10 @@
  * HVB007: IDK What Part This credit refers to, if you want to know contact https://github.com/CaelTheColher as he is the maker of this mod
  * I am just updating it to 1.20.x
  */
-package me.av306.multibind;
+package me.av306.keybindsgaloreplus;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import me.av306.multibind.mixin.KeyBindingAccessor;
+import me.av306.keybindsgaloreplus.mixin.KeyBindingAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -40,6 +40,8 @@ public class KeybindSelectorScreen extends Screen
     public static short PIE_MENU_ALPHA = 0x66;
 
     public static int LABEL_TEXT_INSET = 4;
+
+    public static boolean DARKENED_BACKGROUND = true;
 
     // Instance variables
     private int ticksInScreen = 0;
@@ -281,7 +283,8 @@ public class KeybindSelectorScreen extends Screen
     @Override
     public void renderBackground( DrawContext context, int mouseX, int mouseY, float delta )
     {
-        // Remove the darkened background
-        super.renderBackground( context, mouseX, mouseY, delta );
+        // Remove the darkened background if config is set
+
+        if ( DARKENED_BACKGROUND ) super.renderBackground( context, mouseX, mouseY, delta );
     }
 }

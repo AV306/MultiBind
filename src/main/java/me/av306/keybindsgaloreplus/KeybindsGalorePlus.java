@@ -1,4 +1,4 @@
-package me.av306.multibind;
+package me.av306.keybindsgaloreplus;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -12,9 +12,9 @@ import org.slf4j.LoggerFactory;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 
-public class MultiBind implements ClientModInitializer
+public class KeybindsGalorePlus implements ClientModInitializer
 {
-    public static ConfigManager configManager;
+    public static ConfigManager CONFIG_MANAGER;
 
     public static final Logger LOGGER = LoggerFactory.getLogger( "multibind" );
 
@@ -22,12 +22,12 @@ public class MultiBind implements ClientModInitializer
     @Override
     public void onInitializeClient()
     {
-        LOGGER.info( "MultiBind beginning initialisation..." );
+        LOGGER.info( "KeybindsGalore Plus is initialising..." );
 
         // Read configs
-        configManager = new ConfigManager( FabricLoader.getInstance()
+        CONFIG_MANAGER = new ConfigManager( FabricLoader.getInstance()
                 .getConfigDir()
-                .resolve( "multibind_config.properties" )
+                .resolve("keybindsgalore_plus_config.properties")
                 .toString()
         );
 
@@ -43,10 +43,12 @@ public class MultiBind implements ClientModInitializer
         {
             while ( configreloadKeybind.wasPressed() )
             {
-                configManager.readConfigFile();
+                CONFIG_MANAGER.readConfigFile();
                 client.player.sendMessage( Text.translatable( "text.multibind.configreloaded" ) );
             }
 
         } );
+
+        LOGGER.info( "KeybindsGalore Plus finished initialisation!");
     }
 }

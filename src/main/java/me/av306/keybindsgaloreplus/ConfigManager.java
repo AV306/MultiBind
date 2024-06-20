@@ -1,8 +1,7 @@
-package me.av306.multibind;
+package me.av306.keybindsgaloreplus;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -31,12 +30,12 @@ public class ConfigManager
             {
                 this.configFile.createNewFile();
                 
-                MultiBind.LOGGER.warn( "MultiBind config file not found, copying embedded one" );
-                fos.write( this.getClass().getResourceAsStream( "/multibind_config.properties" ).readAllBytes() );
+                KeybindsGalorePlus.LOGGER.warn( "MultiBind config file not found, copying embedded one" );
+                fos.write( this.getClass().getResourceAsStream("/keybindsgalore_plus_config.properties").readAllBytes() );
             }
             catch ( IOException ioe )
             {
-                MultiBind.LOGGER.error( "IOException while copying default configs!" );
+                KeybindsGalorePlus.LOGGER.error( "IOException while copying default configs!" );
                 ioe.printStackTrace();
             }
         }
@@ -83,29 +82,33 @@ public class ConfigManager
                             Float.parseFloat( entry[1] )
                         );
                     }
+                    else if ( f.getType().isAssignableFrom( boolean.class ) )
+                    {
+                        f.setBoolean( null, Boolean.parseBoolean( entry[1] ) );
+                    }
                     else
                     {
-                        MultiBind.LOGGER.error( "Unrecognised data type for config entry {}", line );
+                        KeybindsGalorePlus.LOGGER.error( "Unrecognised data type for config entry {}", line );
                     }
                 }
                 catch ( ArrayIndexOutOfBoundsException oobe )
                 {
-                    MultiBind.LOGGER.warn( "Malformed config entry: {}", line );
+                    KeybindsGalorePlus.LOGGER.warn( "Malformed config entry: {}", line );
                 }
                 catch ( NoSuchFieldException nsfe )
                 {
-                    MultiBind.LOGGER.warn( "No matching field found for config entry: {}", line );
+                    KeybindsGalorePlus.LOGGER.warn( "No matching field found for config entry: {}", line );
                 }
                 catch ( IllegalAccessException illegal )
                 {
-                    MultiBind.LOGGER.error( "Could not set field involved in: {}", line );
+                    KeybindsGalorePlus.LOGGER.error( "Could not set field involved in: {}", line );
                     illegal.printStackTrace();
                 }
             }
         }
         catch ( IOException ioe )
         {
-            MultiBind.LOGGER.error( "IOException while reading config file: {}", ioe.getMessage() );
+            KeybindsGalorePlus.LOGGER.error( "IOException while reading config file: {}", ioe.getMessage() );
         }
     }
 }

@@ -1,4 +1,4 @@
-package me.av306.multibind;
+package me.av306.keybindsgaloreplus;
 
 import com.google.common.collect.Maps;
 import net.minecraft.client.MinecraftClient;

@@ -1,4 +1,4 @@
-package me.av306.multibind.mixin;
+package me.av306.keybindsgaloreplus.mixin;
 
 import net.minecraft.client.option.KeyBinding;
 import org.spongepowered.asm.mixin.Mixin;
