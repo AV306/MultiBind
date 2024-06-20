@@ -1,5 +1,10 @@
 # KeybindsGalore Plus
 
+> [!WARNING]<br>
+> Currently (20 June), this mod requires **JAVA 21** to run, because I accidentally compiled it with JDK21.<br>
+> See the messages above and below [this one in the FabricMC discord](https://discord.com/channels/507304429255393322/507982463449169932/1253163544669720720) for more info.<Br>
+> I'm fixing this right now, but it'll take a while :(
+
 > [!NOTE]<br>
 > This project is a fork of KeybindsGalore, originally by Cael and updated to 1.20 by HVB007.
 > <br>[HVB007's project is here](https://github.com/HVB007og/KeybindsGalore_HVB007_1.20.x), and Cael's [original project is here](https://github.com/CaelTheColher/KeybindsGalore).
