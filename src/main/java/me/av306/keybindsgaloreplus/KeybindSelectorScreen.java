@@ -8,10 +8,11 @@
  * HVB007: IDK What Part This credit refers to, if you want to know contact https://github.com/CaelTheColher as he is the maker of this mod
  * I am just updating it to 1.20.x
  */
-package me.av306.multibind;
+package me.av306.keybindsgaloreplus;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import me.av306.multibind.mixin.KeyBindingAccessor;
+
+import me.av306.keybindsgaloreplus.mixin.KeyBindingAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -30,7 +31,7 @@ public class KeybindSelectorScreen extends Screen
     public static float EXPANSION_FACTOR_WHEN_SELECTED = 1.1f;
     public static int PIE_MENU_MARGIN = 20;
     public static float PIE_MENU_SCALE = 0.6f;
-    public static float DEADZONE_SCALE = 0.3f;
+    public static float CANCEL_ZONE_SCALE = 0.3f;
 
     public static int CIRCLE_VERTICES = 64;
 
@@ -38,8 +39,11 @@ public class KeybindSelectorScreen extends Screen
     public static short PIE_MENU_HIGHLIGHT_COLOR = 0xFF;
     public static short PIE_MENU_COLOR_LIGHTEN_FACTOR = 0x19;
     public static short PIE_MENU_ALPHA = 0x66;
+    public static boolean SECTOR_GRADATION = true;
 
     public static int LABEL_TEXT_INSET = 4;
+
+    public static boolean DARKENED_BACKGROUND = true;
 
     // Instance variables
     private int ticksInScreen = 0;
@@ -52,12 +56,27 @@ public class KeybindSelectorScreen extends Screen
     private int centreX = 0, centreY = 0;
 
     private float maxRadius = 0;
-    private float deadzoneRadius = 0;
+    private float cancelZoneRadius = 0;
+
+    private boolean isFirstFrame = true;
 
     public KeybindSelectorScreen()
     {
         super( NarratorManager.EMPTY );
         this.mc = MinecraftClient.getInstance();
+
+        // Debug -- print all fields
+        /*for ( var f : this.getClass().getFields() )
+        {
+            try
+            {
+                KeybindsGalorePlus.LOGGER.info( "{}: {}", f.getName(), f.get( this ) );
+            }
+            catch ( IllegalAccessException e )
+            {
+                KeybindsGalorePlus.LOGGER.warn( e.getMessage() );
+            }
+        }*/
     }
 
     public KeybindSelectorScreen( InputUtil.Key key )
@@ -67,7 +86,6 @@ public class KeybindSelectorScreen extends Screen
         this.setConflictedKey( key );
     }
 
-    private boolean isFirstFrame = true;
     @Override
     public void render( DrawContext context, int mouseX, int mouseY, float delta )
     {
@@ -85,7 +103,7 @@ public class KeybindSelectorScreen extends Screen
             this.centreY = this.height / 2;
 
             this.maxRadius = Math.min( (this.centreX * PIE_MENU_SCALE) - PIE_MENU_MARGIN, (this.centreY * PIE_MENU_SCALE) - PIE_MENU_MARGIN );
-            this.deadzoneRadius = maxRadius * DEADZONE_SCALE;
+            this.cancelZoneRadius = maxRadius * CANCEL_ZONE_SCALE;
 
             this.isFirstFrame = false;
         }
@@ -96,7 +114,7 @@ public class KeybindSelectorScreen extends Screen
         float mouseDistanceFromCentre = MathHelper.sqrt( (mouseX - this.centreX) * (mouseX - this.centreX) +
                         (mouseY - this.centreY) * (mouseY - this.centreY) );
 
-        // Determines how many segments to make for the pie menu
+        // Determines how many sectors to make for the pie menu
         int numberOfSectors = KeybindManager.getConflicts( this.conflictedKey ).size();
 
         // Calculate the angle occupied by each sector
@@ -105,8 +123,8 @@ public class KeybindSelectorScreen extends Screen
         // Get the exact sector index that is selected
         this.selectedSector = (int) (mouseAngle / sectorAngle);
 
-        // Deselect slot
-        if ( mouseDistanceFromCentre <= this.deadzoneRadius )
+        // Deselect slot if mouse is within cancel zone
+        if ( mouseDistanceFromCentre <= this.cancelZoneRadius )
             this.selectedSector = -1;
         
         this.renderPieMenu( delta, numberOfSectors, sectorAngle );
@@ -126,23 +144,28 @@ public class KeybindSelectorScreen extends Screen
         buf.begin( VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR );
 
         float startAngle = 0;
-        int vertices = CIRCLE_VERTICES / numberOfSectors;
+        int vertices = CIRCLE_VERTICES / numberOfSectors; // FP truncation here
         for ( var sectorIndex = 0; sectorIndex < numberOfSectors; sectorIndex++ )
         {
             float outerRadius = calculateRadius( delta, numberOfSectors, sectorIndex );
-            float innerRadius = this.deadzoneRadius;
-            short color = PIE_MENU_COLOR;
+            float innerRadius = this.cancelZoneRadius;
+            short innerColor = PIE_MENU_COLOR;
+            short outerColor = PIE_MENU_COLOR;
 
-            if ( sectorIndex % 2 == 0 ) color += PIE_MENU_COLOR_LIGHTEN_FACTOR;
+            // Lighten every other sector
+            // Hardcoding lightening the inner color for a distinct visual identity or something
+            if ( sectorIndex % 2 == 0 ) innerColor = outerColor += PIE_MENU_COLOR_LIGHTEN_FACTOR;
 
             if ( this.selectedSector == sectorIndex )
             {
                 //outerRadius *= EXPANSION_FACTOR_WHEN_SELECTED;
                 innerRadius *= EXPANSION_FACTOR_WHEN_SELECTED;
-                color = PIE_MENU_HIGHLIGHT_COLOR;
+                outerColor = PIE_MENU_HIGHLIGHT_COLOR;
             }
 
-            drawSector( buf, startAngle, sectorAngle, vertices, innerRadius, outerRadius, color );
+            if ( !SECTOR_GRADATION ) innerColor = outerColor;
+
+            this.drawSector( buf, startAngle, sectorAngle, vertices, innerRadius, outerRadius, innerColor, outerColor );
 
             startAngle += sectorAngle;
         }
@@ -150,7 +173,7 @@ public class KeybindSelectorScreen extends Screen
         tess.draw();
     }
 
-    private void drawSector( BufferBuilder buf, float startAngle, float sectorAngle, int vertices, float innerRadius, float outerRadius, short color )
+    private void drawSector( BufferBuilder buf, float startAngle, float sectorAngle, int vertices, float innerRadius, float outerRadius, short innerColor, short outerColor )
     {
         for ( var i = 0; i <= vertices; i++ )
         {
@@ -159,11 +182,12 @@ public class KeybindSelectorScreen extends Screen
             // Inner vertex
             // FIXME: is the compiler smart enough to optimise the trigo?
             buf.vertex( this.centreX + MathHelper.cos( angle ) * innerRadius, this.centreY + MathHelper.sin( angle ) * innerRadius, 0 )
-                    .color( color, color, color, PIE_MENU_ALPHA )
+                    .color( innerColor, innerColor, innerColor, PIE_MENU_ALPHA )
                     .next();
 
+            // Outer vertex
             buf.vertex( this.centreX + MathHelper.cos( angle ) * outerRadius, this.centreY + MathHelper.sin( angle ) * outerRadius, 0 )
-                    .color( color, color, color, PIE_MENU_ALPHA )
+                    .color( outerColor, outerColor, outerColor, PIE_MENU_ALPHA )
                     .next();
         }
     }
@@ -249,6 +273,7 @@ public class KeybindSelectorScreen extends Screen
     public void tick()
     {
         super.tick();
+        
         if ( !InputUtil.isKeyPressed(
                 MinecraftClient.getInstance().getWindow().getHandle(),
                 this.conflictedKey.getCode()
@@ -282,6 +307,6 @@ public class KeybindSelectorScreen extends Screen
     public void renderBackground( DrawContext context, int mouseX, int mouseY, float delta )
     {
         // Remove the darkened background
-        super.renderBackground( context, mouseX, mouseY, delta );
+        if ( DARKENED_BACKGROUND ) super.renderBackground( context, mouseX, mouseY, delta );
     }
 }

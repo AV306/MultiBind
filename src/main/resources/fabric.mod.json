@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"id": "multibind",
+	"id": "keybindsgaloreplus",
 	"version": "${version}",
 
-	"name": "Multibind",
+	"name": "KeybindsGalore Plus",
 	"description": "Adds a popup pie menu when a key with conflicting bindings is pressed. A fork of KeybindsGalore, originally by Cael and updated to 1.20 by HVB007",
 	"authors": [
 		"Blender",
@@ -11,14 +11,14 @@
 		"Cael"
 	],
 	"license": "GNU Lesser General Public License v3.0",
-	"icon": "assets/multibind/icon.png",
+	"icon": "assets/keybindsgaloreplus/icon.png",
 
 	"environment": "client",
 	"entrypoints": {
-		"client": [ "me.av306.multibind.MultiBind" ]
+		"client": [ "me.av306.keybindsgaloreplus.KeybindsGalorePlus" ]
 	},
 	"mixins": [
-      "multibind.mixins.json"
+      "keybindsgaloreplus.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.14.8",

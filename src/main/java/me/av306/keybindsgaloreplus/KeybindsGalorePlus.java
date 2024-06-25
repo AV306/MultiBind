@@ -1,4 +1,4 @@
-package me.av306.multibind;
+package me.av306.keybindsgaloreplus;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -12,31 +12,31 @@ import org.slf4j.LoggerFactory;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 
-public class MultiBind implements ClientModInitializer
+public class KeybindsGalorePlus implements ClientModInitializer
 {
     public static ConfigManager configManager;
 
-    public static final Logger LOGGER = LoggerFactory.getLogger( "multibind" );
+    public static final Logger LOGGER = LoggerFactory.getLogger( "keybingsgaloreplus" );
 
     private static KeyBinding configreloadKeybind;
     @Override
     public void onInitializeClient()
     {
-        LOGGER.info( "MultiBind beginning initialisation..." );
+        LOGGER.info( "KeybindsGalore Plus initialising..." );
 
         // Read configs
         configManager = new ConfigManager( FabricLoader.getInstance()
                 .getConfigDir()
-                .resolve( "multibind_config.properties" )
+                .resolve( "keybindsgaloreplus_config.properties" ) // TODO: put this in a field?
                 .toString()
         );
 
         // Config reload key
         configreloadKeybind = KeyBindingHelper.registerKeyBinding( new KeyBinding(
-                "key.multibind.reloadconfigs",
+                "key.keybindsgaloreplus.reloadconfigs",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_UNKNOWN,
-                "category.multibind.keybinds"
+                "category.keybindsgaloreplus.keybinds"
         ) );
 
         ClientTickEvents.END_CLIENT_TICK.register( client ->
@@ -44,7 +44,7 @@ public class MultiBind implements ClientModInitializer
             while ( configreloadKeybind.wasPressed() )
             {
                 configManager.readConfigFile();
-                client.player.sendMessage( Text.translatable( "text.multibind.configreloaded" ) );
+                client.player.sendMessage( Text.translatable( "text.keybindsgaloreplus.configreloaded" ) );
             }
 
         } );
